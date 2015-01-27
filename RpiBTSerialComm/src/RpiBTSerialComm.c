@@ -10,6 +10,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #include "ttys/ttys.h"
 
@@ -21,7 +22,13 @@
 #define TIMEOUTAFTERANS_SEC		20
 
 // TODO BDY: make an autogen.sh
+static int initAndTalkWithBTDevice(void);
+
 int main(void) {
+	return initAndTalkWithBTDevice();
+}
+
+static int initAndTalkWithBTDevice(void) {
 	Ttys ttys;
 	int ret = 0;
 	char buffer[128];
