@@ -11,6 +11,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "ttys/ttys.h"
+
 int main(void) {
 	puts("Hello World"); /* prints Hello World */
 	// TODO BDY: make an autogen.sh
