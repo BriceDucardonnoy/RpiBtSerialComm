@@ -13,5 +13,6 @@
 
 int main(void) {
 	puts("Hello World"); /* prints Hello World */
+	// TODO BDY: make an autogen.sh
 	return EXIT_SUCCESS;
 }

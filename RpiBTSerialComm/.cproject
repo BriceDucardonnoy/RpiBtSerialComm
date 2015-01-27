@@ -53,8 +53,8 @@
 						<value name="/usr/local/games"/>
 						<value name="${SDK_PATH}/bin"/>
 					</stringListMacro>
-					<stringMacro name="SDK_PATH" type="VALUE_TEXT" value="${HOME}/arm/rpi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian"/>
 					<stringMacro name="TARGET_SYS" type="VALUE_TEXT" value="arm-linux-gnueabihf"/>
+					<stringMacro name="SDK_PATH" type="VALUE_TEXT" value="${HOME}/arm/rpi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian"/>
 				</macros>
 				<externalSettings/>
 				<extensions>
@@ -103,6 +103,7 @@
 			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
 		</scannerConfigBuildInfo>
 	</storageModule>
+	<storageModule moduleId="refreshScope"/>
 	<storageModule moduleId="org.eclipse.cdt.make.core.buildtargets">
 		<buildTargets>
 			<target name="all" path="" targetID="org.eclipse.cdt.build.MakeTargetBuilder">
