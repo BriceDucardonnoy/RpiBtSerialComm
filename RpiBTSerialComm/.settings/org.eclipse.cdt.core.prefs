@@ -1,0 +1,12 @@
+eclipse.preferences.version=1
+environment/project/org.eclipse.linuxtools.cdt.autotools.core.configuration.build.2034051331.588085937/PATH/delimiter=\:
+environment/project/org.eclipse.linuxtools.cdt.autotools.core.configuration.build.2034051331.588085937/PATH/operation=append
+environment/project/org.eclipse.linuxtools.cdt.autotools.core.configuration.build.2034051331.588085937/PATH/value=${SDK_PATH}/bin
+environment/project/org.eclipse.linuxtools.cdt.autotools.core.configuration.build.2034051331.588085937/SDK_PATH/delimiter=\:
+environment/project/org.eclipse.linuxtools.cdt.autotools.core.configuration.build.2034051331.588085937/SDK_PATH/operation=append
+environment/project/org.eclipse.linuxtools.cdt.autotools.core.configuration.build.2034051331.588085937/SDK_PATH/value=${HOME}/arm/rpi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian
+environment/project/org.eclipse.linuxtools.cdt.autotools.core.configuration.build.2034051331.588085937/TARGET_SYS/delimiter=\:
+environment/project/org.eclipse.linuxtools.cdt.autotools.core.configuration.build.2034051331.588085937/TARGET_SYS/operation=append
+environment/project/org.eclipse.linuxtools.cdt.autotools.core.configuration.build.2034051331.588085937/TARGET_SYS/value=arm-linux-gnueabihf
+environment/project/org.eclipse.linuxtools.cdt.autotools.core.configuration.build.2034051331.588085937/append=true
+environment/project/org.eclipse.linuxtools.cdt.autotools.core.configuration.build.2034051331.588085937/appendContributed=true
