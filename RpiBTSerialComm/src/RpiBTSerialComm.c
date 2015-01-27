@@ -3,8 +3,8 @@
  Name        : RpiBTSerialComm.c
  Author      : Brice DUCARDONNOY
  Version     :
- Copyright   : Copyright (c) Brice DUCARDONNOY
- Description : Hello World in C, Ansi-style
+ Copyright   : Copyright (c) 2015 Brice DUCARDONNOY
+ Description : BlueTooth through serial device communication program in C
  ============================================================================
  */
 
@@ -13,15 +13,19 @@
 
 #include "ttys/ttys.h"
 
-#define DEVNAME		"/dev/rfcomm0"
-#define SPSPEED		115200
-#define SPPARITY	PARITY_NONE
-#define EXIT_ABORT	-1
+#define DEVNAME					"/dev/rfcomm0"
+#define SPSPEED					115200
+#define SPPARITY				PARITY_NONE
+#define EXIT_ABORT				-1
+#define TIMEOUTWAITING4ANS_SEC	5000
+#define TIMEOUTAFTERANS_SEC		20
 
 // TODO BDY: make an autogen.sh
 int main(void) {
 	Ttys ttys;
 	int ret = 0;
+	char buffer[128];
+	*buffer=0;
 
 	puts("Start application initialization"); /* prints Hello World */
 	if((ttys = ttys_init()) == NULL) {
@@ -50,6 +54,14 @@ int main(void) {
 	sleep(2);
 	puts("Write something");
 	ttys_sendstring(ttys, "Hello world from RPi!!!\r\n");
+	puts("Wait for something");
+	if((ret = ttys_empty_input_buffer(ttys)) != TTYS_OK) {
+		fprintf(stderr, "Failed to empty buffer::%d returned\n", ret);
+		goto freeTty;
+	}
+	if(ttys_getstring(ttys, buffer, 127, TIMEOUTWAITING4ANS_SEC, TIMEOUTAFTERANS_SEC) > 0) {
+		printf("%s\n",buffer);
+	}
 
 	puts("Disconnect");
 	if((ret = ttys_disconnect(ttys)) != TTYS_OK) {
