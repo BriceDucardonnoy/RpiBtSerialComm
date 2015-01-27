@@ -1,3 +1,5 @@
 /build-RPi/
 /autom4te.cache/
 Makefile.in
+/install/
+*~

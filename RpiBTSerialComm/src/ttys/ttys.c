@@ -10,7 +10,7 @@
 
 #include "ttys.h"
 
-
+// TODO BDY: update error return code to use errno and its message
 // initialize ttys context...send back pointer of structure
 // ttys interface context, or NULL if something goes wrong...
 Ttys_context *ttys_init(void)
