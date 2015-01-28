@@ -7,5 +7,5 @@ AM_LDFLAGS  	= -L$(top_srcdir)/dependencies/libs -lbluetooth
 
 bin_PROGRAMS=sewSerialComm
 
-sewSerialComm_SOURCES= ttys/ttys.c RpiBTSerialComm.c
+sewSerialComm_SOURCES= Ttys/ttys.c bluetoothUtils.c RpiBTSerialComm.c
 

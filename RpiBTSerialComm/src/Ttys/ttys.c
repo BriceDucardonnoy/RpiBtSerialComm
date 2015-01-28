@@ -1,3 +1,5 @@
+#include "../Ttys/ttys.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -8,7 +10,6 @@
 #include <sys/ioctl.h>
 #include <linux/serial.h>
 
-#include "ttys.h"
 
 // TODO BDY: update error return code to use errno and its message
 // initialize ttys context...send back pointer of structure
