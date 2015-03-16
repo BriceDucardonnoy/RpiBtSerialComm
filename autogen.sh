@@ -30,7 +30,16 @@ echo "Update submodules"
 git submodule init
 git submodule update
 
-echo "Compile Wireless-tools submodule"
+echo "Compile external libraries"
+####### How to recompile lib nl. This operation is necessary at the 1st build to update path in .pc (package config) files #######
+#cd dependencies/libnl-3.2.25
+#make distclean
+#rm -r install
+#mkdir install && ./configure --prefix=`pwd`/install --host=${HOST}
+#make install
+#cd ../../
+#cd ../iw-3.17/
+#PREFIX=`pwd`/install CC=arm-linux-gnueabihf-gcc PKG_CONFIG_PATH=`pwd`/../libnl-3.2.25/install/lib/pkgconfig/ make install
 
 echo "Invoke autotools"
 # Autotools invocation
