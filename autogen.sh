@@ -44,4 +44,8 @@ autoconf
 ./configure --prefix=${PWD}/install --host=${HOST}
 
 #TODO: make some init to avoid the make -k
+#TODO BDY: run it from build-RPi to have all .o and .deps in build-RPi folder
+#cd build-RPi && ../configure --prefix=${PWD}/install --host=${HOST}
+echo "Configuration done. You can do 'make clean install' now"
+
 
