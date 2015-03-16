@@ -157,6 +157,9 @@ int readAndRepeat(GlbCtx_t ctx) {
 		bytes_read = read(ctx->clienttFd, buf, sizeof(buf) - 1);
 		if( bytes_read > 0 ) {
 			printf("received [%s]\n", buf);
+			if(strstr(buf, DISCOVER_WIFI) != NULL) {
+				printf("Discover WiFi asked\n");
+			}
 			usleep(500000);// Half second
 			printf("Write %d bytes\n", bytes_read);
 //			if(write(ctx->clienttFd, buf, bytes_read) != bytes_read) {

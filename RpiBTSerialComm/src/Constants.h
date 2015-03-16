@@ -15,6 +15,8 @@
 #define TIMEOUTWAITING4ANS_SEC	5000
 #define TIMEOUTAFTERANS_SEC		20
 
+#define DISCOVER_WIFI			"Discover_WiFi"
+
 typedef struct {
 	int sockFd;
 	int clienttFd;

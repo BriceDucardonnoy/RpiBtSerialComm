@@ -30,6 +30,8 @@ echo "Update submodules"
 git submodule init
 git submodule update
 
+echo "Compile Wireless-tools submodule"
+
 echo "Invoke autotools"
 # Autotools invocation
 libtoolize -c --automake
