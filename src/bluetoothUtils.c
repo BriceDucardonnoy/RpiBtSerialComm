@@ -37,8 +37,9 @@
 #include <bluetooth/hci_lib.h>
 #include <bluetooth/rfcomm.h>
 
-#include "Constants.h"
+#include "constants.h"
 #include "Ttys/ttys.h"
+#include "Network/wifiTools.h"
 
 int simpleScan(void) {
 	printf("Enter in %s\n", __FUNCTION__);
@@ -159,6 +160,8 @@ int readAndRepeat(GlbCtx_t ctx) {
 			printf("received [%s]\n", buf);
 			if(strstr(buf, DISCOVER_WIFI) != NULL) {
 				printf("Discover WiFi asked\n");
+				// TODO BDY: here is the WiFi job
+				scanWifi();
 			}
 			usleep(500000);// Half second
 			printf("Write %d bytes\n", bytes_read);

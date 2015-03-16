@@ -28,7 +28,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#include "Constants.h"
+#include "constants.h"
 #include "bluetoothUtils.h"
 
 int main(void) {

@@ -19,8 +19,8 @@ fi
 echo "Clean repositories"
 # Clean repositories
 [ -d autom4te.cache ] && rm -rf autom4te.cache
-[ -d install ] && rm -rf install
-mkdir install
+[ -d build-RPi/install ] && rm -rf build-RPi/install
+mkdir -p build-RPi/install
 #find src -name "*\.deps" -exec rm -rf {} \;
 rm -rf `find src -name "*\.deps"`
 find src -name "*\.o" -exec rm -rf {} \;
@@ -30,7 +30,7 @@ echo "Update submodules"
 git submodule init
 git submodule update
 
-echo "Compile external libraries"
+#echo "Compile external libraries"
 ####### How to recompile lib nl. This operation is necessary at the 1st build to update path in .pc (package config) files #######
 ####### WARNING: This is an obsolete part since we use lib wireless tools #######
 #cd dependencies/libnl-3.2.25
@@ -52,11 +52,12 @@ automake --add-missing --foreign
 autoconf
 #./configure --prefix=/tmp/bdy/streameverywhere/install --host=arm-angstrom-linux-gnueabi
 #./configure --prefix=/tmp/bdy/streameverywhere/install --host=arm-linux-gnueabihf
-./configure --prefix=${PWD}/install --host=${HOST}
+
+#./configure --prefix=${PWD}/install --host=${HOST}
 
 #TODO: make some init to avoid the make -k
-#TODO BDY: run it from build-RPi to have all .o and .deps in build-RPi folder
-#cd build-RPi && ../configure --prefix=${PWD}/install --host=${HOST}
-echo "Configuration done. You can do 'make clean install' now"
+# Run it from build-RPi to have all .o and .deps in build-RPi folder
+cd build-RPi && ../configure --prefix=${PWD}/install --host=${HOST}
+echo "Configuration done. You can do 'cd build-RPi && make clean install' now"
 
 

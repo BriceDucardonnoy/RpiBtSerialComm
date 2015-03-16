@@ -4,9 +4,13 @@ AUTOMAKE_OPTIONS=subdir-objects
 #AM_CFLAGS		= -Wall -O2 -g
 
 AM_CFLAGS		= -Wall -I$(top_srcdir)/dependencies/includes
-AM_LDFLAGS  	= -L$(top_srcdir)/dependencies/libs -lbluetooth
+AM_LDFLAGS  	= -L$(top_srcdir)/dependencies/libs -lbluetooth -liw
 
 bin_PROGRAMS=sewSerialComm
 
-sewSerialComm_SOURCES= Ttys/ttys.c bluetoothUtils.c RpiBTSerialComm.c
+sewSerialComm_SOURCES= \
+	Ttys/ttys.c \
+	Network/wifiTools.c \
+	bluetoothUtils.c \
+	RpiBTSerialComm.c
 

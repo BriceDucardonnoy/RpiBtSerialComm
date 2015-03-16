@@ -50,7 +50,7 @@
 <option id="host" value="arm-linux-gnueabihf"/>
 <option id="build" value=""/>
 <option id="target" value=""/>
-<option id="prefix" value="${CWD}/install"/>
+<option id="prefix" value="${PWD}/install"/>
 <option id="exec-prefix" value=""/>
 <option id="libdir" value=""/>
 <option id="bindir" value=""/>
