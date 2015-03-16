@@ -12,8 +12,8 @@ if [ "$1" == "arm" ]; then
 		source ${HOME}/arm/rpi/rpi-linaro-environment-setup
 		# WARNING: at the end of the script execution, PATH is released (or do export PATH...)
 		#echo `which arm-linux-gnueabihf-gcc`
-		HOST=arm-linux-gnueabihf
 	fi
+	HOST=arm-linux-gnueabihf
 fi
 
 echo "Clean repositories"

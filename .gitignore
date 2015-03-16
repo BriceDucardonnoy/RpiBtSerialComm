@@ -3,3 +3,8 @@
 Makefile.in
 /install/
 *~
+**Makefile.in
+**Makefile
+**.deps/
+**.o
+**.dirstamp
