@@ -5,7 +5,7 @@
  * Created on  : 17 mars 2015
  * Version     :
  * Copyright   : Copyright © 2015 Brice DUCARDONNOY
- * Description :  program in C
+ * Description : Program in C
  * ============================================================================
  * Permission is hereby granted, free of charge, to any person obtaining 
  * a copy of this software and associated documentation files (the "Software"), 
@@ -26,9 +26,67 @@
  */
 
 #include <stdio.h>
+#include <errno.h>
+#include <stdlib.h>
 
-#include "wireless/iwlib.h"
+#include "../constants.h"
+#include "wifiTools.h"
 
-void scanWifi(void) {
-	printf("Enter in empty %s", __FUNCTION__);
+
+wireless_scan_head * scanWifi(void) {
+	printf("Enter in empty %s\n", __FUNCTION__);
+	int 				skfd;			/* generic raw socket desc.	*/
+	char				*dev = "wlan0";
+	int					ret = EXIT_SUCCESS;
+	wireless_scan_head 	wHead;
+	wireless_scan 		*result;
+	iwrange 			range;
+
+	/* Create a channel to the NET kernel. */
+	if((skfd = iw_sockets_open()) < 0) {
+		perror("socket");
+		return NULL;
+	}
+
+	/* Get some metadata to use for scanning */
+	if (iw_get_range_info(skfd, dev, &range) < 0) {
+		fprintf(stderr, "Error during iw_get_range_info. Aborting.\n");
+		ret = EXIT_FAILURE;
+		goto CleanAll;
+	}
+
+	/* Perform the scan */
+	if (iw_scan(skfd, dev, range.we_version_compiled, &wHead) < 0) {
+		fprintf(stderr, "Error during iw_scan. Aborting, reason: %d::%s\n", errno, strerror(errno));
+		ret = EXIT_FAILURE;
+	}
+
+	/* Traverse the results */
+	result = wHead.result;
+	while (NULL != result) {
+		printf("%s: level=%u, noise=%u, quality=%u\n",
+			result->b.essid,
+			result->stats.qual.level,
+			result->stats.qual.noise,
+			result->stats.qual.qual);
+		result = result->next;
+	}
+
+CleanAll:
+	printf("Clean all\n");
+	iw_sockets_close(skfd);
+	if(wHead.result != NULL) {
+		result = wHead.result;
+		wireless_scan *future;
+		printf("Free ");
+		do {
+			printf("<%s> ", result->b.essid);
+			future = result->next;
+			free(result);
+			result = future;
+		} while(result != NULL);
+		printf("\n");
+	}
+
+	return ret == EXIT_SUCCESS ? &wHead : NULL;
 }

@@ -27,15 +27,25 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <string.h>
 
 #include "constants.h"
 #include "bluetoothUtils.h"
+#include "Network/wifiTools.h"
 
-int main(void) {
+int main(int argc, char **argv) {
 	GlbCtx_t ctx = malloc(sizeof(GlbCtx));
 //	simpleScan();// For the fun
 //	rfcommServer();
 //	return initAndTalkWithBTDevice();
+	if(argc == 2) {
+		if(strstr(argv[1], "ScanWifi") != NULL) {
+			printf("Test wifi scan\n");
+			return scanWifi() == NULL ? EXIT_FAILURE : EXIT_SUCCESS;
+		}
+		return EXIT_SUCCESS;
+	}
+
 	if(wait4connect(ctx, 20) != 0) {
 		fprintf(stderr, "Failed during wait4connect\n");
 		return EXIT_FAILURE;

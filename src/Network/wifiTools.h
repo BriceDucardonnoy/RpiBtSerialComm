@@ -5,7 +5,7 @@
  * Created on  : 17 mars 2015
  * Version     :
  * Copyright   : Copyright © 2015 Brice DUCARDONNOY
- * Description :  program in C
+ * Description : Program in C
  * ============================================================================
  * Permission is hereby granted, free of charge, to any person obtaining 
  * a copy of this software and associated documentation files (the "Software"), 
@@ -28,6 +28,8 @@
 #ifndef NETWORK_WIFITOOLS_H_
 #define NETWORK_WIFITOOLS_H_
 
-extern void scanWifi(void);
+#include "wireless/iwlib.h"
+
+extern wireless_scan_head * scanWifi(void);
 
 #endif /* NETWORK_WIFITOOLS_H_ */
