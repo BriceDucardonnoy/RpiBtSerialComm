@@ -32,21 +32,21 @@
 #include "constants.h"
 #include "bluetoothUtils.h"
 #include "Network/wifiTools.h"
+#include "RpiBTSerialComm.h"
 
 int main(int argc, char **argv) {
-	GlbCtx_t ctx = malloc(sizeof(GlbCtx));
+	GlbCtx_t ctx = initContext();;
 //	simpleScan();// For the fun
 //	rfcommServer();
 //	return initAndTalkWithBTDevice();
 	if(argc == 2) {
 		if(strstr(argv[1], "ScanWifi") != NULL) {
 			printf("Test wifi scan\n");
-			wireless_scan_head *result;
-			if((result = scanWifi()) == NULL) {
+			if((ctx->wHead = scanWifi()) == NULL) {
 				return EXIT_FAILURE;
 			}
 			else {
-				clean_wireless_scan_head_content(result);
+				cleanWirelessScanHeadContent(ctx->wHead);
 				return EXIT_SUCCESS;
 			}
 		}
@@ -67,8 +67,24 @@ int main(int argc, char **argv) {
 		puts("Close socket FD");
 		close(ctx->sockFd);
 	}
-	free(ctx);
+	destroyContext(ctx);
 	return EXIT_SUCCESS;
+}
+
+GlbCtx_t initContext(void) {
+	GlbCtx_t ctx = malloc(sizeof(GlbCtx));
+//	ctx->wHead = malloc(sizeof(wireless_scan_head));
+
+	return ctx;
+}
+
+void destroyContext(GlbCtx_t ctx) {
+	if(!ctx) return ;
+	if(ctx->wHead) {
+		cleanWirelessScanHeadContent(ctx->wHead);
+		free(ctx->wHead);
+	}
+	free(ctx);
 }
 
 // TODO BDY: monitor signals for scan anc pairing

@@ -21,10 +21,13 @@
 /* WiFi */
 #define IW_SCAN_HACK			0x8000
 
+#include "Network/wifiTools.h"
+
 /* Global structure */
 typedef struct {
 	int sockFd;
 	int clienttFd;
+	wireless_scan_head *wHead;
 } GlbCtx;
 typedef GlbCtx * GlbCtx_t;
 

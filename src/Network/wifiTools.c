@@ -43,7 +43,7 @@ wireless_scan_head * scanWifi(void) {
 	int 				skfd;			/* generic raw socket desc.	*/
 	char				*dev = "wlan0";
 	int					ret = EXIT_SUCCESS;
-	wireless_scan_head 	wHead;
+	wireless_scan_head 	*wHead = malloc(sizeof(wireless_scan_head));
 	wireless_scan 		*result;
 	iwrange 			range;
 
@@ -61,13 +61,13 @@ wireless_scan_head * scanWifi(void) {
 	}
 
 	/* Perform the scan */
-	if (iw_scan(skfd, dev, range.we_version_compiled, &wHead) < 0) {
+	if (iw_scan(skfd, dev, range.we_version_compiled, wHead) < 0) {
 		fprintf(stderr, "Error during iw_scan. Aborting, reason: %d::%s\n", errno, strerror(errno));
 		ret = EXIT_FAILURE;
 	}
 
 	/* Traverse the results */
-	result = wHead.result;
+	result = wHead->result;
 	while (NULL != result) {
 		printf("%s: level=%u, noise=%u, quality=%u\n",
 			result->b.essid,
@@ -77,14 +77,15 @@ wireless_scan_head * scanWifi(void) {
 		result = result->next;
 	}
 
-CleanAll:// TODO BDY: make wHead as a pointer.
+CleanAll:
 	printf("Clean all\n");
 	iw_sockets_close(skfd);
 	if(ret != EXIT_SUCCESS) {
-		clean_wireless_scan_head_content(&wHead);
+		printf("Failure append, so clean wireless scan result\n");
+		cleanWirelessScanHeadContent(wHead);
 	}
 
-	return ret == EXIT_SUCCESS ? &wHead : NULL;
+	return ret == EXIT_SUCCESS ? wHead : NULL;
 }
 
 /*!
@@ -93,7 +94,7 @@ CleanAll:// TODO BDY: make wHead as a pointer.
  * 	Clean a wireless_scan_head content.
  * 	It's up to the caller to clean then the wireless_scan_head itself (free(wireless_scan_head)).
  */
-void clean_wireless_scan_head_content(wireless_scan_head *wHead) {
+void cleanWirelessScanHeadContent(wireless_scan_head *wHead) {
 	printf("Enter in %s\n", __FUNCTION__);
 	wireless_scan *current, *future;
 
