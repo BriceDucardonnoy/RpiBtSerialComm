@@ -32,7 +32,12 @@
 #include "../constants.h"
 #include "wifiTools.h"
 
-
+/*!
+ * \brief Look for the visible WiFi network
+ *
+ * Look for the visible WiFi network and return a list of network.
+ * It's up to the caller to free the list of network with clean_wireless_scan_head_content method.
+ */
 wireless_scan_head * scanWifi(void) {
 	printf("Enter in empty %s\n", __FUNCTION__);
 	int 				skfd;			/* generic raw socket desc.	*/
@@ -72,21 +77,35 @@ wireless_scan_head * scanWifi(void) {
 		result = result->next;
 	}
 
-CleanAll:
+CleanAll:// TODO BDY: make wHead as a pointer.
 	printf("Clean all\n");
 	iw_sockets_close(skfd);
-	if(wHead.result != NULL) {
-		result = wHead.result;
-		wireless_scan *future;
-		printf("Free ");
-		do {
-			printf("<%s> ", result->b.essid);
-			future = result->next;
-			free(result);
-			result = future;
-		} while(result != NULL);
-		printf("\n");
+	if(ret != EXIT_SUCCESS) {
+		clean_wireless_scan_head_content(&wHead);
 	}
 
 	return ret == EXIT_SUCCESS ? &wHead : NULL;
+}
+
+/*!
+ * \brief Clean a wireless_scan_head content.
+ *
+ * 	Clean a wireless_scan_head content.
+ * 	It's up to the caller to clean then the wireless_scan_head itself (free(wireless_scan_head)).
+ */
+void clean_wireless_scan_head_content(wireless_scan_head *wHead) {
+	printf("Enter in %s\n", __FUNCTION__);
+	wireless_scan *current, *future;
+
+	if(wHead->result != NULL) {
+		current = wHead->result;
+		printf("Free ");
+		do {
+			printf("<%s> ", current->b.essid);
+			future = current->next;
+			free(current);
+			current = future;
+		} while(future != NULL);
+		printf("\n");
+	}
 }

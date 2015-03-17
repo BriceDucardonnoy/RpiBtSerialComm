@@ -30,6 +30,19 @@
 
 #include "wireless/iwlib.h"
 
+/*!
+ * \brief Look for the visible WiFi network
+ *
+ * Look for the visible WiFi network and return a list of network.
+ * It's up to the caller to free the list of network with clean_wireless_scan_head_content method.
+ */
 extern wireless_scan_head * scanWifi(void);
+/*!
+ * \brief Clean a wireless_scan_head content.
+ *
+ * 	Clean a wireless_scan_head content.
+ * 	It's up to the caller to clean then the wireless_scan_head itself (free(wireless_scan_head)).
+ */
+extern void clean_wireless_scan_head_content(wireless_scan_head *wHead);
 
 #endif /* NETWORK_WIFITOOLS_H_ */

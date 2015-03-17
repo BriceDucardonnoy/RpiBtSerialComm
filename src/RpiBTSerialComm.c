@@ -41,7 +41,14 @@ int main(int argc, char **argv) {
 	if(argc == 2) {
 		if(strstr(argv[1], "ScanWifi") != NULL) {
 			printf("Test wifi scan\n");
-			return scanWifi() == NULL ? EXIT_FAILURE : EXIT_SUCCESS;
+			wireless_scan_head *result;
+			if((result = scanWifi()) == NULL) {
+				return EXIT_FAILURE;
+			}
+			else {
+				clean_wireless_scan_head_content(result);
+				return EXIT_SUCCESS;
+			}
 		}
 		return EXIT_SUCCESS;
 	}
