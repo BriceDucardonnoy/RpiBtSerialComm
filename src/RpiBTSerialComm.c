@@ -35,7 +35,7 @@
 #include "communicationProtocol.h"
 
 int main(int argc, char **argv) {
-	GlbCtx_t ctx = initContext();;
+	GlbCtx_t ctx = initContext();
 //	simpleScan();// For the fun
 //	rfcommServer();
 //	return initAndTalkWithBTDevice();
@@ -80,7 +80,7 @@ int main(int argc, char **argv) {
 GlbCtx_t initContext(void) {
 	GlbCtx_t ctx = malloc(sizeof(GlbCtx));
 //	ctx->wHead = malloc(sizeof(wireless_scan_head));
-
+	/* Init commands for communication protocol */
 	ctx->commMethods[0] = (void *) *scanWifi;
 	return ctx;
 }

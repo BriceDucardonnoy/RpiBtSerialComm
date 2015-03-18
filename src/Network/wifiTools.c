@@ -82,7 +82,7 @@ wireless_scan_head * scanWifi(void) {
 	}
 
 CleanAll:
-	printf("Clean all\n");
+//	printf("Clean all\n");
 	iw_sockets_close(skfd);
 	if(ret != EXIT_SUCCESS) {
 		printf("Failure append, so clean wireless scan result\n");

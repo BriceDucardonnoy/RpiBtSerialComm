@@ -35,7 +35,8 @@
  * - CRC: 2 bytes from frame without FE and FF
  *
  * Example in hexa of DISCOVER_WIFI request in protocol V1:
- * FE-01-01-01-CRC_MSB-CRC_LSB-FF
+ * FE-Version-SZ-CMD-CRC_MSB-CRC_LSB-FF
+ * FE-01	 -01-00 -CRC_MSB-CRC_LSB-FF
  *
  * FIXME BDY: what if the CRC contains FE or FF
  **Byte stuffing**
@@ -44,12 +45,11 @@
  * FF => FD 02
  */
 #include <stdio.h>
+#include <netinet/in.h>
 
 #include "constants.h"
 #include "Network/wifiTools.h"
 #include "communicationProtocol.h"
-
-// TODO BDY: see functions pointers array
 
 crc_t crcTable[256];
 static void crcInit(void);
@@ -60,6 +60,7 @@ int deserialize(GlbCtx_t ctx, unsigned char *rxData) {
 	int version = rxData[1];
 	int sz;
 	int crcInd;
+	int cmd;
 
 	if(isInitialized == FALSE) {
 		printf("Initialize crc\n");
@@ -73,6 +74,7 @@ int deserialize(GlbCtx_t ctx, unsigned char *rxData) {
 	}
 	if(version == 1) {
 		sz = rxData[2];
+		cmd = rxData[3];
 
 		crcInd = 3 + sz;// FE, version, size: <cmd> starts at 4th position
 		if(rxData[2 + sz + 3] != 0xFF) {// +3: CRC(+2) and 0xFF(+1)
@@ -83,11 +85,15 @@ int deserialize(GlbCtx_t ctx, unsigned char *rxData) {
 		printf("crc ind is %d => CRC_MSB = 0x%02X and CRC_LSB = 0x%02X\n", crcInd, rxData[crcInd], rxData[crcInd + 1]);
 		uint16_t rxCrc = (rxData[crcInd] << 8) | rxData[crcInd + 1];
 		printf("crc calculated is 0x%04X and got in message is 0x%04X\n", calculateCrc16(&rxData[1], sz + 2), rxCrc);
-		if(rxCrc != calculateCrc16(&rxData[1], sz + 2)) {
+		if(htons(rxCrc) != calculateCrc16(&rxData[1], sz + 2)) {
 			printf("BAD CRC\n");
+			return EXIT_FAILURE;
 		}
 		else {
 			printf("GOOD CRC\n");
+//			(*ctx->commMethods[0])(NULL);
+			// XXX BDY: for now, consider we always have no parameters and return the same structure. For scan, update ctx rather than returning the result?
+			ctx->wHead = (*ctx->commMethods[cmd])(NULL);
 		}
 		// TODO BDY: undo the byte stuffing if needed to translate the message
 	}
@@ -163,19 +169,22 @@ static void printMessage(uint8_t *message, int len) {
 
 void test(void) {
 	printf("Enter in %s\n", __FUNCTION__);
-	GlbCtx ctx;
+	GlbCtx_t ctx = initContext();
 	crcInit();
 	uint8_t pdu[3] = {1, 1, DISCOVER_WIFI};
 	uint16_t crc = calculateCrc16(pdu, 3);
 	printf("crc calculated for message is 0x%04X\n", crc);
 	uint8_t message[7] = {0xFE, 1, 1, DISCOVER_WIFI, (uint8_t) (crc & 0x00FF), (uint8_t) (crc >> 8), 0xFF};
 
-	printMessage(message + 2, 5);// Displays the FF
+	printMessage(message, 7);// Displays the FF
 //	printf("Message is %s\n", message);
 	printf("1st\n");
-	deserialize(&ctx, message);
+	deserialize(ctx, message);
 	printf("2nd\n");
-	deserialize(&ctx, message);
+	deserialize(ctx, message);
+
+	printf("Clean context\n");
+	destroyContext(ctx);
 }
 
 //int main(int argc, char **argv) {
