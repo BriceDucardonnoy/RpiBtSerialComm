@@ -33,7 +33,6 @@
 #include "bluetoothUtils.h"
 #include "Network/wifiTools.h"
 #include "communicationProtocol.h"
-#include "RpiBTSerialComm.h"
 
 int main(int argc, char **argv) {
 	GlbCtx_t ctx = initContext();;

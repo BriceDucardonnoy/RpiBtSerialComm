@@ -28,21 +28,8 @@
 #ifndef COMMUNICATIONPROTOCOL_H_
 #define COMMUNICATIONPROTOCOL_H_
 
-/*
- * The width of the CRC calculation and result.
- * Modify the typedef for a 16 or 32-bit CRC standard.
- */
-typedef uint8_t crc_t;
-
-#define WIDTH  (8 * sizeof(crc_t))
-#define TOPBIT (1 << (WIDTH - 1))
-#define POLYNOMIAL 0x8005
-
-extern crc_t crcTable[256];
-
-/* CODE FUNCTION */
-#define DISCOVER_WIFI	1
-
+extern int deserialize(GlbCtx_t ctx, unsigned char *rxData);
 extern uint16_t calculateCrc16(uint8_t *message, int nBytes);
 extern void test(void);
+
 #endif /* COMMUNICATIONPROTOCOL_H_ */

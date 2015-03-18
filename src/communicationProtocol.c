@@ -49,11 +49,13 @@
 #include "Network/wifiTools.h"
 #include "communicationProtocol.h"
 
+// TODO BDY: see functions pointers array
+
 crc_t crcTable[256];
 static void crcInit(void);
 static void printMessage(uint8_t *message, int len);
 
-int deserialize(unsigned char *rxData) {
+int deserialize(GlbCtx_t ctx, unsigned char *rxData) {
 	static int isInitialized = FALSE;
 	int version = rxData[1];
 	int sz;
@@ -161,6 +163,7 @@ static void printMessage(uint8_t *message, int len) {
 
 void test(void) {
 	printf("Enter in %s\n", __FUNCTION__);
+	GlbCtx ctx;
 	crcInit();
 	uint8_t pdu[3] = {1, 1, DISCOVER_WIFI};
 	uint16_t crc = calculateCrc16(pdu, 3);
@@ -170,9 +173,9 @@ void test(void) {
 	printMessage(message + 2, 5);// Displays the FF
 //	printf("Message is %s\n", message);
 	printf("1st\n");
-	deserialize(message);
+	deserialize(&ctx, message);
 	printf("2nd\n");
-	deserialize(message);
+	deserialize(&ctx, message);
 }
 
 //int main(int argc, char **argv) {
