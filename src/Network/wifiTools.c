@@ -39,7 +39,6 @@
  * It's up to the caller to free the list of network with clean_wireless_scan_head_content method.
  */
 wireless_scan_head * scanWifi(void) {
-	// TODO BDY: clean ctx->wHead before calling this method or set it has parameter
 	printf("Enter in empty %s\n", __FUNCTION__);
 	int 				skfd;			/* generic raw socket desc.	*/
 	char				*dev = "wlan0";
@@ -50,7 +49,7 @@ wireless_scan_head * scanWifi(void) {
 
 	/* Create a channel to the NET kernel. */
 	if((skfd = iw_sockets_open()) < 0) {
-		perror("socket");
+		perror("Socket");
 		return NULL;
 	}
 
@@ -65,18 +64,20 @@ wireless_scan_head * scanWifi(void) {
 	if (iw_scan(skfd, dev, range.we_version_compiled, wHead) < 0) {
 		fprintf(stderr, "Error during iw_scan. Aborting, reason: %d::%s\n", errno, strerror(errno));
 		ret = EXIT_FAILURE;
+		goto CleanAll;
 	}
+
 
 	/* Traverse the results */
 	result = wHead->result;
 	while (NULL != result) {
-		printf("%s: level=%u, noise=%u, quality=%u, crypted=0x%08x, key required=%s\n",
+		printf("%s: level=%u, noise=%u, quality=%u, crypted=0x%08x, Encryption key=%s\n",
 			result->b.essid,
 			result->stats.qual.level,
 			result->stats.qual.noise,
 			result->stats.qual.qual,
 			result->b.key_flags,
-			(result->b.key_flags & IW_ENCODE_DISABLED) != 0 ? "no" : "yes");
+			(result->b.key_flags & IW_ENCODE_DISABLED) == 0 ? "on" : "off");
 		result = result->next;
 	}
 

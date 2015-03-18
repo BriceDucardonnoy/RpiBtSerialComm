@@ -4,6 +4,7 @@ AUTOMAKE_OPTIONS=subdir-objects
 #AM_CFLAGS		= -Wall -O2 -g
 
 AM_CFLAGS		= -Wall -I$(top_srcdir)/dependencies/includes
+AM_CFLAGS		+= -O0 -g
 AM_LDFLAGS  	= -L$(top_srcdir)/dependencies/libs -lbluetooth -liw
 
 bin_PROGRAMS=sewSerialComm
