@@ -79,6 +79,7 @@ GlbCtx_t initContext(void) {
 	GlbCtx_t ctx = malloc(sizeof(GlbCtx));
 //	ctx->wHead = malloc(sizeof(wireless_scan_head));
 
+//	ctx->commMethods[0] = scanWifi;
 	return ctx;
 }
 

@@ -24,6 +24,8 @@
 #define POLYNOMIAL 0x8005
 
 /* CODE FUNCTION */
+#define NB_COMMANDS		1
+
 #define DISCOVER_WIFI	0
 
 /* WiFi */
@@ -36,7 +38,7 @@
  * Modify the typedef for a 16 or 32-bit CRC standard.
  */
 typedef uint8_t crc_t;
-typedef void * func_pointer(int);
+//typedef void * func_pointer(int);
 
 /* Global structure */
 typedef struct {
@@ -46,7 +48,7 @@ typedef struct {
 	/* Communication protocol */
 	crc_t crcTable[256];/* CRC calculation table */
 	/* Function pointer array */
-	void *commMethods;
+	void * (*commMethods[NB_COMMANDS]) (void *params);
 	/* WiFi */
 	wireless_scan_head *wHead;/* Scan array response */
 } GlbCtx;
