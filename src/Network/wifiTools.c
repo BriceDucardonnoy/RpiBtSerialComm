@@ -39,7 +39,7 @@
  * It's up to the caller to free the list of network with clean_wireless_scan_head_content method.
  */
 wireless_scan_head * scanWifi(void) {
-	printf("Enter in empty %s\n", __FUNCTION__);
+	printf("Enter in %s\n", __FUNCTION__);
 	int 				skfd;			/* generic raw socket desc.	*/
 	char				*dev = "wlan0";
 	int					ret = EXIT_SUCCESS;
@@ -71,7 +71,7 @@ wireless_scan_head * scanWifi(void) {
 	/* Traverse the results */
 	result = wHead->result;
 	while (NULL != result) {
-		printf("%s: level=%u, noise=%u, quality=%u, crypted=0x%08x, Encryption key=%s\n",
+		printf("%s: level=%u, noise=%u, quality=%u, crypted=0x%08X, Encryption key=%s\n",
 			result->b.essid,
 			result->stats.qual.level,
 			result->stats.qual.noise,

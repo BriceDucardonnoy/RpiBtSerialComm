@@ -40,6 +40,7 @@
 #include "constants.h"
 #include "Ttys/ttys.h"
 #include "Network/wifiTools.h"
+#include "communicationProtocol.h"
 
 int simpleScan(void) {
 	printf("Enter in %s\n", __FUNCTION__);
@@ -158,7 +159,7 @@ int readAndRepeat(GlbCtx_t ctx) {
 		bytes_read = read(ctx->clienttFd, buf, sizeof(buf) - 1);
 		if( bytes_read > 0 ) {
 			printf("received [%s]\n", buf);
-			if(strstr(buf, DISCOVER_WIFI) != NULL) {
+			if(strstr(buf, "DISCOVER_WIFI") != NULL) {
 				printf("Discover WiFi asked\n");
 				// TODO BDY: here is the WiFi job
 //				scanWifi(NULL);

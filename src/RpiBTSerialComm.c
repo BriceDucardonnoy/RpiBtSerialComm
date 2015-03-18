@@ -32,6 +32,7 @@
 #include "constants.h"
 #include "bluetoothUtils.h"
 #include "Network/wifiTools.h"
+#include "communicationProtocol.h"
 #include "RpiBTSerialComm.h"
 
 int main(int argc, char **argv) {
@@ -49,6 +50,10 @@ int main(int argc, char **argv) {
 				cleanWirelessScanHeadContent(ctx->wHead);
 				return EXIT_SUCCESS;
 			}
+		}
+		else if(strstr(argv[1], "TestProtocol") != NULL) {
+			printf("Test protocol\n");
+			test();
 		}
 		return EXIT_SUCCESS;
 	}

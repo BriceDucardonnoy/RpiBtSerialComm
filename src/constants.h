@@ -8,15 +8,15 @@
 #ifndef CONSTANTS_H_
 #define CONSTANTS_H_
 
+#define FALSE					0x00000000
+#define TRUE					0x00000001
+
 #define DEVNAME					"/dev/rfcomm0"
 #define SPSPEED					115200
 #define SPPARITY				PARITY_NONE
 #define EXIT_ABORT				-1
 #define TIMEOUTWAITING4ANS_SEC	5000
 #define TIMEOUTAFTERANS_SEC		20
-
-/* Commands */
-#define DISCOVER_WIFI			"Discover_WiFi"
 
 /* WiFi */
 #define IW_SCAN_HACK			0x8000
