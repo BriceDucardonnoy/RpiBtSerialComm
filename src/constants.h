@@ -47,8 +47,7 @@ typedef struct {
 	int clienttFd;/* Another FD... */
 	/* Communication protocol */
 	crc_t crcTable[256];/* CRC calculation table */
-	/* Function pointer array */
-	void * (*commMethods[NB_COMMANDS]) (void *params);
+	void * (*commMethods[NB_COMMANDS]) (void *params);/* Function pointer array */
 	/* WiFi */
 	wireless_scan_head *wHead;/* Scan array response */
 } GlbCtx;

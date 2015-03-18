@@ -42,7 +42,9 @@ int main(int argc, char **argv) {
 	if(argc == 2) {
 		if(strstr(argv[1], "ScanWifi") != NULL) {
 			printf("Test wifi scan\n");
-			if((ctx->wHead = scanWifi()) == NULL) {
+//			(*ctx->commMethods[0])(NULL);// Normal call
+//			if((ctx->wHead = scanWifi()) == NULL) {// Classic call
+			if((ctx->wHead = (wireless_scan_head*) (*ctx->commMethods[0])(NULL)) == NULL) {
 				return EXIT_FAILURE;
 			}
 			else {
@@ -79,7 +81,7 @@ GlbCtx_t initContext(void) {
 	GlbCtx_t ctx = malloc(sizeof(GlbCtx));
 //	ctx->wHead = malloc(sizeof(wireless_scan_head));
 
-//	ctx->commMethods[0] = scanWifi;
+	ctx->commMethods[0] = (void *) *scanWifi;
 	return ctx;
 }
 
