@@ -1,8 +1,8 @@
 /*
  * ============================================================================
- * Name        : wifiTools.h
+ * Name        : RpiBTSerialComm.h
  * Author      : Brice DUCARDONNOY
- * Created on  : 17 mars 2015
+ * Created on  : 19 mars 2015
  * Version     :
  * Copyright   : Copyright © 2015 Brice DUCARDONNOY
  * Description : Program in C
@@ -25,36 +25,33 @@
  * dealings in the Software.
  */
 
-#ifndef NETWORK_WIFITOOLS_H_
-#define NETWORK_WIFITOOLS_H_
+#ifndef RPIBTSERIALCOMM_H_
+#define RPIBTSERIALCOMM_H_
 
-#include "../constants.h"
-#include "../RpiBTSerialComm.h"
-#include "wireless/iwlib.h"
+//typedef void * func_pointer(int);
+/* Global structure */
+typedef struct {
+	/* BlueTooth communication */
+	int sockFd;/* FD for BlueTooth serial communication */
+	int clienttFd;/* Another FD... */
+	/* Communication protocol */
+	crc_t crcTable[256];/* CRC calculation table */
+//	void * (*commMethods[NB_COMMANDS]) (void *params);/* Function pointer array */
+	/* WiFi */
+	wireless_scan_head *wHead;/* Scan array response */
+} GlbCtx;
+typedef GlbCtx * GlbCtx_t;
 
-/*
- * Scan state and meta-information, used to decode events...
- */
-typedef struct iwscan_state
-{
-  /* State */
-  int			ap_num;		/* Access Point number 1->N */
-  int			val_index;	/* Value in table 0->(N-1) */
-} iwscan_state;
+typedef struct stArgs {
+	GlbCtx_t ctx;
+	uint8_t *array;
+	int arrayLength;
+} stArgs;// *stArgs_t;
+typedef stArgs * stArgs_t;
 
-/*!
- * \brief Look for the visible WiFi network
- *
- * Look for the visible WiFi network and return a list of network.
- * It's up to the caller to free the list of network with clean_wireless_scan_head_content method.
- */
-extern int scanWifi(stArgs_t args);
-/*!
- * \brief Clean a wireless_scan_head content.
- *
- * 	Clean a wireless_scan_head content.
- * 	It's up to the caller to clean then the wireless_scan_head itself (free(wireless_scan_head)).
- */
-extern void cleanWirelessScanHeadContent(wireless_scan_head *wHead);
 
-#endif /* NETWORK_WIFITOOLS_H_ */
+extern GlbCtx_t initContext(void);
+extern void destroyContext(GlbCtx_t ctx);
+extern int callFunction(int funcCode, stArgs_t args);
+
+#endif /* RPIBTSERIALCOMM_H_ */

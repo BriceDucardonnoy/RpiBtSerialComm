@@ -29,8 +29,8 @@
 #include <errno.h>
 #include <stdlib.h>
 
-#include "../constants.h"
 #include "wifiTools.h"
+#include "../constants.h"
 
 /*!
  * \brief Look for the visible WiFi network
@@ -38,7 +38,8 @@
  * Look for the visible WiFi network and return a list of network.
  * It's up to the caller to free the list of network with clean_wireless_scan_head_content method.
  */
-wireless_scan_head * scanWifi(void) {
+//wireless_scan_head * scanWifi(stArgs_t args) {
+int scanWifi(stArgs_t args) {
 	printf("Enter in %s\n", __FUNCTION__);
 	int 				skfd;			/* generic raw socket desc.	*/
 	char				*dev = "wlan0";
@@ -50,7 +51,7 @@ wireless_scan_head * scanWifi(void) {
 	/* Create a channel to the NET kernel. */
 	if((skfd = iw_sockets_open()) < 0) {
 		perror("Socket");
-		return NULL;
+		return EXIT_FAILURE;
 	}
 
 	/* Get some metadata to use for scanning */
@@ -89,7 +90,8 @@ CleanAll:
 		cleanWirelessScanHeadContent(wHead);
 	}
 
-	return ret == EXIT_SUCCESS ? wHead : NULL;
+//	return ret == EXIT_SUCCESS ? wHead : NULL;
+	return ret;
 }
 
 /*!

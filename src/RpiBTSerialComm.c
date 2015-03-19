@@ -30,9 +30,12 @@
 #include <string.h>
 
 #include "constants.h"
+#include "RpiBTSerialComm.h"
 #include "bluetoothUtils.h"
 #include "Network/wifiTools.h"
 #include "communicationProtocol.h"
+
+static int (*commMethods[NB_COMMANDS]) (stArgs_t args) = { scanWifi };
 
 int main(int argc, char **argv) {
 	GlbCtx_t ctx = initContext();
@@ -44,7 +47,9 @@ int main(int argc, char **argv) {
 			printf("Test wifi scan\n");
 //			(*ctx->commMethods[0])(NULL);// Normal call
 //			if((ctx->wHead = scanWifi()) == NULL) {// Classic call
-			if((ctx->wHead = (wireless_scan_head*) (*ctx->commMethods[0])(NULL)) == NULL) {
+//			if((ctx->wHead = (wireless_scan_head*) (*ctx->commMethods[0])(NULL)) == NULL) {
+			stArgs_t args = malloc(sizeof(struct stArgs));
+			if(commMethods[0](args) == 0) {
 				return EXIT_FAILURE;
 			}
 			else {
@@ -77,11 +82,19 @@ int main(int argc, char **argv) {
 	return EXIT_SUCCESS;
 }
 
+int callFunction(int funcCode, stArgs_t args) {
+	if(funcCode >= 0 && funcCode < NB_COMMANDS) {
+		return commMethods[funcCode](args);
+	}
+	return -1;
+}
+
 GlbCtx_t initContext(void) {
 	GlbCtx_t ctx = malloc(sizeof(GlbCtx));
 //	ctx->wHead = malloc(sizeof(wireless_scan_head));
+
 	/* Init commands for communication protocol */
-	ctx->commMethods[0] = (void *) *scanWifi;
+//	commMethods[0] = (void *) *scanWifi;
 	return ctx;
 }
 

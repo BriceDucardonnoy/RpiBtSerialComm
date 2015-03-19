@@ -93,7 +93,8 @@ int deserialize(GlbCtx_t ctx, unsigned char *rxData) {
 			printf("GOOD CRC\n");
 //			(*ctx->commMethods[0])(NULL);
 			// XXX BDY: for now, consider we always have no parameters and return the same structure. For scan, update ctx rather than returning the result?
-			ctx->wHead = (*ctx->commMethods[cmd])(NULL);
+//			ctx->wHead = (*ctx->commMethods[cmd])(NULL);
+			return callFunction(cmd, NULL);
 		}
 		// TODO BDY: undo the byte stuffing if needed to translate the message
 	}
