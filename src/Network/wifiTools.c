@@ -38,15 +38,15 @@
  * Look for the visible WiFi network and return a list of network.
  * It's up to the caller to free the list of network with clean_wireless_scan_head_content method.
  */
-//wireless_scan_head * scanWifi(stArgs_t args) {
 int scanWifi(stArgs_t args) {
 	printf("Enter in %s\n", __FUNCTION__);
 	int 				skfd;			/* generic raw socket desc.	*/
 	char				*dev = "wlan0";
 	int					ret = EXIT_SUCCESS;
-	wireless_scan_head 	*wHead = malloc(sizeof(wireless_scan_head));
 	wireless_scan 		*result;
 	iwrange 			range;
+
+	args->ctx->wHead = malloc(sizeof(wireless_scan_head));
 
 	/* Create a channel to the NET kernel. */
 	if((skfd = iw_sockets_open()) < 0) {
@@ -62,7 +62,7 @@ int scanWifi(stArgs_t args) {
 	}
 
 	/* Perform the scan */
-	if (iw_scan(skfd, dev, range.we_version_compiled, wHead) < 0) {
+	if (iw_scan(skfd, dev, range.we_version_compiled, args->ctx->wHead) < 0) {
 		fprintf(stderr, "Error during iw_scan. Aborting, reason: %d::%s\n", errno, strerror(errno));
 		ret = EXIT_FAILURE;
 		goto CleanAll;
@@ -70,7 +70,7 @@ int scanWifi(stArgs_t args) {
 
 
 	/* Traverse the results */
-	result = wHead->result;
+	result = args->ctx->wHead->result;
 	while (NULL != result) {
 		printf("%s: level=%u, noise=%u, quality=%u, crypted=0x%08X, Encryption key=%s\n",
 			result->b.essid,
@@ -87,10 +87,9 @@ CleanAll:
 	iw_sockets_close(skfd);
 	if(ret != EXIT_SUCCESS) {
 		printf("Failure append, so clean wireless scan result\n");
-		cleanWirelessScanHeadContent(wHead);
+		cleanWirelessScanHeadContent(args->ctx->wHead);
 	}
 
-//	return ret == EXIT_SUCCESS ? wHead : NULL;
 	return ret;
 }
 

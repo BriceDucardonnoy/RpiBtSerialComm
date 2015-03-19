@@ -35,34 +35,22 @@
 #include "Network/wifiTools.h"
 #include "communicationProtocol.h"
 
+static int testRpi(GlbCtx_t ctx, int argc, char **argv);
+
 static int (*commMethods[NB_COMMANDS]) (stArgs_t args) = { scanWifi };
 
 int main(int argc, char **argv) {
 	GlbCtx_t ctx = initContext();
+	/* Old tests */
 //	simpleScan();// For the fun
 //	rfcommServer();
 //	return initAndTalkWithBTDevice();
+
+	// Tests
 	if(argc == 2) {
-		if(strstr(argv[1], "ScanWifi") != NULL) {
-			printf("Test wifi scan\n");
-//			(*ctx->commMethods[0])(NULL);// Normal call
-//			if((ctx->wHead = scanWifi()) == NULL) {// Classic call
-//			if((ctx->wHead = (wireless_scan_head*) (*ctx->commMethods[0])(NULL)) == NULL) {
-			stArgs_t args = malloc(sizeof(struct stArgs));
-			if(commMethods[0](args) == 0) {
-				return EXIT_FAILURE;
-			}
-			else {
-				cleanWirelessScanHeadContent(ctx->wHead);
-				return EXIT_SUCCESS;
-			}
-		}
-		else if(strstr(argv[1], "TestProtocol") != NULL) {
-			printf("Test protocol\n");
-			test();
-		}
-		return EXIT_SUCCESS;
+		return testRpi(ctx, argc, argv);
 	}
+	// End of tests
 
 	if(wait4connect(ctx, 20) != 0) {
 		fprintf(stderr, "Failed during wait4connect\n");
@@ -82,11 +70,32 @@ int main(int argc, char **argv) {
 	return EXIT_SUCCESS;
 }
 
+static int testRpi(GlbCtx_t ctx, int argc, char **argv) {
+	if(strstr(argv[1], "ScanWifi") != NULL) {
+		printf("Test wifi scan\n");
+	//			(*ctx->commMethods[0])(NULL);// Normal call
+	//			if((ctx->wHead = scanWifi()) == NULL) {// Classic call
+	//			if((ctx->wHead = (wireless_scan_head*) (*ctx->commMethods[0])(NULL)) == NULL) {
+		stArgs_t args = malloc(sizeof(struct stArgs));
+		args->ctx = ctx;
+		int ret = commMethods[0](args);
+		args->ctx = NULL;
+		free(args);
+		destroyContext(ctx);
+		return ret;
+	}
+	else if(strstr(argv[1], "TestProtocol") != NULL) {
+		printf("Test protocol\n");
+		test();
+	}
+	return EXIT_SUCCESS;
+}
+
 int callFunction(int funcCode, stArgs_t args) {
 	if(funcCode >= 0 && funcCode < NB_COMMANDS) {
 		return commMethods[funcCode](args);
 	}
-	return -1;
+	return EXIT_ABORT;
 }
 
 GlbCtx_t initContext(void) {
