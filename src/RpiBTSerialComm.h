@@ -35,7 +35,6 @@ typedef struct {
 	int sockFd;/* FD for BlueTooth serial communication */
 	int clienttFd;/* Another FD... */
 	/* Communication protocol */
-	crc_t crcTable[256];/* CRC calculation table */
 //	void * (*commMethods[NB_COMMANDS]) (void *params);/* Function pointer array */
 	/* WiFi */
 	wireless_scan_head *wHead;/* Scan array response */
@@ -46,8 +45,12 @@ typedef struct stArgs {
 	GlbCtx_t ctx;
 	uint8_t *array;
 	int arrayLength;
-} stArgs;// *stArgs_t;
-typedef stArgs * stArgs_t;
+} stArgs, *stArgs_t;
+
+//typedef struct commFunc {
+//	int (*commMethods) (stArgs_t args);
+//	// ...
+//} commFunc, *commFunc_t;
 
 
 extern GlbCtx_t initContext(void);

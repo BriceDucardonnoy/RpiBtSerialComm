@@ -51,7 +51,7 @@
 #include "Network/wifiTools.h"
 #include "communicationProtocol.h"
 
-crc_t crcTable[256];
+static crc_t crcTable[256];
 static void crcInit(void);
 static void printMessage(uint8_t *message, int len);
 
@@ -65,8 +65,8 @@ int deserialize(GlbCtx_t ctx, unsigned char *rxData) {
 
 	if(isInitialized == FALSE) {
 		printf("Initialize crc\n");
-		isInitialized = TRUE;
 		crcInit();
+		isInitialized = TRUE;
 	}
 	/* Valid integrity of frame */
 	if(rxData[0] != 0xFE) {
