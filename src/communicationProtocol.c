@@ -134,9 +134,10 @@ uint8_t * txRawFrame(uint8_t *message) {
 /*
  * Functions to (de)serialize the clean message without byte stuffing
  */
-int deserialize(GlbCtx_t ctx, unsigned char *rxData) {
+int deserializeAndProcessCmd(GlbCtx_t ctx, unsigned char *rxData) {
 	static int isInitialized = FALSE;
-	int version = rxData[1];
+	uint8_t *message;
+	int version;
 	int sz;
 	int crcInd;
 	int cmd;
@@ -147,24 +148,30 @@ int deserialize(GlbCtx_t ctx, unsigned char *rxData) {
 		crcInit();
 		isInitialized = TRUE;
 	}
+	message = rxRawFrame(rxData);
+	version = message[1];
+	if(!message) {
+		fprintf(stderr, "Failed to remove byte stuffing\n");
+		return EXIT_ABORT;
+	}
 	/* Valid integrity of frame */
-	if(rxData[0] != 0xFE) {
+	if(message[0] != 0xFE) {
 		fprintf(stderr, "The start flag isn't present. Skip operation.\n");
 		return EXIT_ABORT;
 	}
 	if(version == 1) {
-		sz = rxData[2];
-		cmd = rxData[3];
+		sz = message[2];
+		cmd = message[3];
 
 		crcInd = 3 + sz;// FE, version, size: <cmd> starts at 4th position
-		if(rxData[2 + sz + 3] != 0xFF) {// +3: CRC(+2) and 0xFF(+1)
+		if(message[2 + sz + 3] != 0xFF) {// +3: CRC(+2) and 0xFF(+1)
 			fprintf(stderr, "The end flag isn't present at the good. Skip operation.\n");
 			return EXIT_ABORT;
 		}
 		// Check CRC
-		printf("crc ind is %d => CRC_MSB = 0x%02X and CRC_LSB = 0x%02X\n", crcInd, rxData[crcInd], rxData[crcInd + 1]);
-		uint16_t rxCrc = (rxData[crcInd] << 8) | rxData[crcInd + 1];
-		uint16_t calculatedCrc = calculateCrc16(&rxData[1], sz + 2);
+		printf("crc ind is %d => CRC_MSB = 0x%02X and CRC_LSB = 0x%02X\n", crcInd, message[crcInd], message[crcInd + 1]);
+		uint16_t rxCrc = (message[crcInd] << 8) | message[crcInd + 1];
+		uint16_t calculatedCrc = calculateCrc16(&message[1], sz + 2);
 		printf("crc calculated is 0x%04X and got in message is 0x%04X\n", calculatedCrc, htons(rxCrc));
 		if(htons(rxCrc) != calculatedCrc) {
 			printf("BAD CRC\n");
@@ -176,7 +183,7 @@ int deserialize(GlbCtx_t ctx, unsigned char *rxData) {
 //			ctx->wHead = (*ctx->commMethods[cmd])(NULL);
 			stArgs_t args = malloc(sizeof(struct stArgs));
 			args->ctx = ctx;
-			args->array = rxData;
+			args->array = message;
 			args->arrayLength = sz + 3 + 3;// Because sz is at index 2
 			ret = callFunction(cmd, args);
 			args->ctx = NULL;
@@ -185,11 +192,16 @@ int deserialize(GlbCtx_t ctx, unsigned char *rxData) {
 		}
 	}
 	else {
-		fprintf(stderr, "Version %u unknown. Skip operation.\n", rxData[1]);
+		fprintf(stderr, "Version %u unknown. Skip operation.\n", message[1]);
 		return EXIT_ABORT;
 	}
 
 	return EXIT_SUCCESS;
+}
+
+int serialize(uint8_t message) {
+	// TODO BDY: NYI
+	return 0;
 }
 
 static void crcInit(void) {
@@ -273,18 +285,17 @@ void testProtocol(GlbCtx_t ctx) {
 	cleanMessage = rxRawFrame(stuffedMessage);
 	printMessage(cleanMessage, 7);
 
-	if(stuffedMessage) free(stuffedMessage);
-	if(cleanMessage) free(cleanMessage);
 	printf("************************************************\n");
 
 //	printf("Message is %s\n", message);
 	printf("1st\n");
-	deserialize(ctx, rawMessage);
+	deserializeAndProcessCmd(ctx, stuffedMessage);
 	printf("2nd\n");
-	deserialize(ctx, rawMessage);
-
+	deserializeAndProcessCmd(ctx, stuffedMessage);
 
 	printf("Clean context\n");
+	if(stuffedMessage) free(stuffedMessage);
+	if(cleanMessage) free(cleanMessage);
 	destroyContext(ctx);
 }
 

@@ -39,7 +39,7 @@
 
 #include "constants.h"
 #include "Ttys/ttys.h"
-#include "Network/wifiTools.h"
+#include "RpiBTSerialComm.h"
 #include "communicationProtocol.h"
 
 int simpleScan(void) {
@@ -149,7 +149,7 @@ int wait4connect(GlbCtx_t ctx, int timeout) {
  *  Detailed description starts here.
  */
 int readAndRepeat(GlbCtx_t ctx) {
-	char buf[1024] = { 0 };
+	uint8_t buf[1024] = { 0 };
 	int bytes_read;
 	printf("Enter in %s\n", __FUNCTION__);
 
@@ -157,12 +157,14 @@ int readAndRepeat(GlbCtx_t ctx) {
 	do {
 		memset(buf, 0, sizeof(buf));
 		bytes_read = read(ctx->clienttFd, buf, sizeof(buf) - 1);
-		if( bytes_read > 0 ) {
-			printf("received [%s]\n", buf);
-			if(strstr(buf, "DISCOVER_WIFI") != NULL) {
-				printf("Discover WiFi asked\n");
-				// TODO BDY: here is the communication deserialize job
-			}
+		if(bytes_read > 0) {
+			printf("Received some data\n");
+//			printf("received [%s]\n", buf);
+//			if(strstr(buf, "DISCOVER_WIFI") != NULL) {
+//				printf("Discover WiFi asked\n");
+//				// TODO BDY: here is the communication deserialize job
+//			}
+//			deserializeAndProcessCmd(ctx, buf);
 			usleep(500000);// Half second
 			printf("Write %d bytes\n", bytes_read);
 //			if(write(ctx->clienttFd, buf, bytes_read) != bytes_read) {
@@ -170,7 +172,8 @@ int readAndRepeat(GlbCtx_t ctx) {
 				fprintf(stderr, "Failed to write: %d::%s\n", errno, strerror(errno));
 			}
 		}
-	} while(strstr(buf, "EOC") == NULL);
+	} while(TRUE);
+//	} while(strstr(buf, "EOC") == NULL);
 
 	return 0;
 }

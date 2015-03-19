@@ -39,6 +39,8 @@
 
 static int testRpi(GlbCtx_t ctx, int argc, char **argv);
 
+// TODO BDY: monitor signal for stop condition in main loop in bluetoothUtils.c
+
 //static int (*commMethods[]) (stArgs_t args) = { scanWifi };
 static stCommFunc commFuncs[] = {
 //	{.commMethods = scanWifi},
@@ -63,6 +65,7 @@ int main(int argc, char **argv) {
 		fprintf(stderr, "Failed during wait4connect\n");
 		return EXIT_FAILURE;
 	}
+	// Infinite loop
 	readAndRepeat(ctx);
 	// Close all FD
 	if(ctx->clienttFd >= 0) {
