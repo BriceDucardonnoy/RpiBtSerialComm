@@ -162,7 +162,6 @@ int readAndRepeat(GlbCtx_t ctx) {
 			if(strstr(buf, "DISCOVER_WIFI") != NULL) {
 				printf("Discover WiFi asked\n");
 				// TODO BDY: here is the communication deserialize job
-//				scanWifi(NULL);
 			}
 			usleep(500000);// Half second
 			printf("Write %d bytes\n", bytes_read);

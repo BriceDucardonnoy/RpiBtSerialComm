@@ -35,16 +35,16 @@
 #include "Network/wifiTools.h"
 #include "communicationProtocol.h"
 
+#define FUNC(X) {.commMethods = X}
+
 static int testRpi(GlbCtx_t ctx, int argc, char **argv);
 
 //static int (*commMethods[]) (stArgs_t args) = { scanWifi };
 static stCommFunc commFuncs[] = {
-	{.commMethods = scanWifi},
+//	{.commMethods = scanWifi},
+	FUNC(scanWifi),
 	{ NULL }
 };
-//static stCommFunc func = {
-//	.commMethods = scanWifi
-//};
 
 int main(int argc, char **argv) {
 	GlbCtx_t ctx = initContext();
@@ -80,8 +80,6 @@ int main(int argc, char **argv) {
 static int testRpi(GlbCtx_t ctx, int argc, char **argv) {
 	if(strstr(argv[1], "ScanWifi") != NULL) {
 		printf("Test wifi scan\n");
-//		(*ctx->commMethods[0])(NULL);// Normal call
-//		if((ctx->wHead = scanWifi()) == NULL) {// Classic call
 //		if((ctx->wHead = (wireless_scan_head*) (*ctx->commMethods[0])(NULL)) == NULL) {
 		stArgs_t args = malloc(sizeof(struct stArgs));
 		args->ctx = ctx;
@@ -125,4 +123,5 @@ void destroyContext(GlbCtx_t ctx) {
 }
 
 // TODO BDY: monitor signals for scan anc pairing
+// TODO BDY: test with Valgrind
 
