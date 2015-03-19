@@ -37,8 +37,14 @@
 
 static int testRpi(GlbCtx_t ctx, int argc, char **argv);
 
-static int (*commMethods[]) (stArgs_t args) = { scanWifi };
-//static commFunc[NB_COMMANDS];
+//static int (*commMethods[]) (stArgs_t args) = { scanWifi };
+static stCommFunc commFuncs[] = {
+	{.commMethods = scanWifi},
+	{ NULL }
+};
+//static stCommFunc func = {
+//	.commMethods = scanWifi
+//};
 
 int main(int argc, char **argv) {
 	GlbCtx_t ctx = initContext();
@@ -79,7 +85,8 @@ static int testRpi(GlbCtx_t ctx, int argc, char **argv) {
 //		if((ctx->wHead = (wireless_scan_head*) (*ctx->commMethods[0])(NULL)) == NULL) {
 		stArgs_t args = malloc(sizeof(struct stArgs));
 		args->ctx = ctx;
-		int ret = commMethods[0](args);
+//		int ret = commMethods[0](args);
+		int ret = commFuncs[0].commMethods(args);
 		args->ctx = NULL;
 		free(args);
 		destroyContext(ctx);
@@ -94,7 +101,7 @@ static int testRpi(GlbCtx_t ctx, int argc, char **argv) {
 
 int callFunction(int funcCode, stArgs_t args) {
 	if(funcCode >= 0 && funcCode < NB_COMMANDS) {
-		return commMethods[funcCode](args);
+		return commFuncs[funcCode].commMethods(args);
 	}
 	return EXIT_ABORT;
 }

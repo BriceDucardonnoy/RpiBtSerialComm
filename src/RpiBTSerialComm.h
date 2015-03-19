@@ -47,10 +47,10 @@ typedef struct stArgs {
 	int arrayLength;
 } stArgs, *stArgs_t;
 
-//typedef struct commFunc {
-//	int (*commMethods) (stArgs_t args);
-//	// ...
-//} commFunc, *commFunc_t;
+typedef struct stCommFunc {
+	int (*commMethods) (stArgs_t args);
+	// ...
+} stCommFunc, *stCommFunc_t;
 
 
 extern GlbCtx_t initContext(void);
