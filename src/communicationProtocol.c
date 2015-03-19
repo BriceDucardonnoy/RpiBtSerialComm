@@ -38,8 +38,8 @@
  * FE-Version-SZ-CMD-CRC_MSB-CRC_LSB-FF
  * FE-01	 -01-00 -CRC_MSB-CRC_LSB-FF
  *
- * FIXME BDY: what if the CRC contains FE or FF
- **Byte stuffing**
+ * Byte stuffing applied to the serialized packet
+ * ----------------------------------------------
  * FD => FD 00
  * FE => FD 01
  * FF => FD 02
@@ -51,10 +51,89 @@
 #include "Network/wifiTools.h"
 #include "communicationProtocol.h"
 
+#define MAX_PACKET_LENGTH 256
+
 static crc_t crcTable[256];
 static void crcInit(void);
 static void printMessage(uint8_t *message, int len);
+static int getStuffedMessageLength(uint8_t *stuffedMessage);
 
+/*
+ * Functions to apply / remove the byte stuffing into the message
+ */
+uint8_t * rxRawFrame(uint8_t *messageStuffed) {
+	uint8_t *message = malloc(MAX_PACKET_LENGTH);// Size of packet is 1 byte so the unstuffed packet can't be more than 255 bytes
+	int i, cur, j;
+
+	for(i = 0, cur = 0, j = 0 ; i < MAX_PACKET_LENGTH ; i++) {
+		if(messageStuffed[i] != 0xFD || i == MAX_PACKET_LENGTH - 1) {
+			message[j++] = messageStuffed[cur++];
+			continue;
+		}
+		// messageStuffed[i] == 0xFD
+		switch(messageStuffed[i+1]) {
+		case 0x00:
+			message[j++] = 0xFD;
+			break;
+		case 0x01:
+			message[j++] = 0xFE;
+			break;
+		case 0x02:
+			message[j++] = 0xFF;
+			break;
+		default:
+			fprintf(stderr, "Unrecognized byte stuffing\n");
+			return NULL;
+		};
+		cur++;
+	}
+	return message;
+}
+
+uint8_t * txRawFrame(uint8_t *message) {
+	uint8_t *messageStuffed = malloc(MAX_PACKET_LENGTH*2);// Size of packet is 1 byte so the stuffed packet in worst case can be more than 255*2 bytes
+	int i, j;
+	int sz = message[1] == 1 ? message[2] + 3 + 3 : 0;
+	/*
+	 * If version is 1, message size is
+	 * <declared sz> at index 2
+	 * +					  3 (for message[0] and message[1] and message[2])
+	 * + 					  3 (for 2 CRC bytes and 0xFF
+	 */
+//	printf("SZ = %d\n", sz);
+
+	for(i = 0, j = 0 ; i < sz ; i++) {
+		if(i == 0 || i == sz - 1 || // We don't apply byte stuffing on flags themselves
+				(message[i] != 0xFD && message[i] != 0xFE && message[i] != 0xFF)) {
+			messageStuffed[j++] = message[i];
+			continue;
+		}
+		// Byte stuffing to do
+		switch(message[i]) {
+		case 0xFD:
+			messageStuffed[j++] = 0xFD;
+			messageStuffed[j++] = 0x00;
+			break;
+		case 0xFE:
+			messageStuffed[j++] = 0xFD;
+			messageStuffed[j++] = 0x01;
+			break;
+		case 0xFF:
+			messageStuffed[j++] = 0xFD;
+			messageStuffed[j++] = 0x02;
+			break;
+		default:
+			fprintf(stderr, "Impossible case\n");
+			return NULL;
+		};
+	}
+
+	return messageStuffed;
+}
+
+/*
+ * Functions to (de)serialize the clean message without byte stuffing
+ */
 int deserialize(GlbCtx_t ctx, unsigned char *rxData) {
 	static int isInitialized = FALSE;
 	int version = rxData[1];
@@ -98,13 +177,12 @@ int deserialize(GlbCtx_t ctx, unsigned char *rxData) {
 			stArgs_t args = malloc(sizeof(struct stArgs));
 			args->ctx = ctx;
 			args->array = rxData;
-			args->arrayLength = sz + 3;// Because sz is at index 2
+			args->arrayLength = sz + 3 + 3;// Because sz is at index 2
 			ret = callFunction(cmd, args);
 			args->ctx = NULL;
 			free(args);
 			return ret;
 		}
-		// TODO BDY: undo the byte stuffing if needed to translate the message
 	}
 	else {
 		fprintf(stderr, "Version %u unknown. Skip operation.\n", rxData[1]);
@@ -118,21 +196,13 @@ static void crcInit(void) {
 	crc_t  remainder;
 	int dividend;
 	uint8_t bit;
-	/*
-	 * Compute the remainder of each possible dividend.
-	 */
+	// Compute the remainder of each possible dividend.
 	for (dividend = 0; dividend < 256; ++dividend) {
-		/*
-		 * Start with the dividend followed by zeros.
-		 */
+		// Start with the dividend followed by zeros.
 		remainder = dividend << (WIDTH - 8);
-		/*
-		 * Perform modulo-2 division, a bit at a time.
-		 */
+		// Perform modulo-2 division, a bit at a time.
 		for (bit = 8; bit > 0; --bit) {
-			/*
-			 * Try to divide the current data bit.
-			 */
+			// Try to divide the current data bit.
 			if (remainder & TOPBIT) {
 				remainder = (remainder << 1) ^ POLYNOMIAL;
 			}
@@ -140,9 +210,7 @@ static void crcInit(void) {
 				remainder = (remainder << 1);
 			}
 		}
-		/*
-		 * Store the result into the table.
-		 */
+		// Store the result into the table.
 		crcTable[dividend] = remainder;
 	}
 
@@ -153,20 +221,19 @@ uint16_t calculateCrc16(uint8_t *message, int nBytes) {
 	crc_t remainder = 0;
 	int byte;
 
-	/*
-	 * Divide the message by the polynomial, a byte at a time.
-	 */
+	// Divide the message by the polynomial, a byte at a time.
 	for (byte = 0 ; byte < nBytes ; ++byte) {
 		uiData = message[byte] ^ (remainder >> (WIDTH - 8));
 		remainder = crcTable[uiData] ^ (remainder << 8);
 	}
 
-	/*
-	 * The final remainder is the CRC.
-	 */
+	// The final remainder is the CRC.
 	return (remainder);
 }
 
+/*
+ * \brief Convenient method to display the content of a message in hexa
+ */
 static void printMessage(uint8_t *message, int len) {
 	int i;
 	printf("Message: ");
@@ -176,20 +243,46 @@ static void printMessage(uint8_t *message, int len) {
 	printf("\n");
 }
 
+static int getStuffedMessageLength(uint8_t *stuffedMessage) {
+	int i = 0;
+	while(i < MAX_PACKET_LENGTH) {
+		if(stuffedMessage[i] == 0xFF) return ++i;// include this last byte
+		i++;
+	}
+	return -1;
+}
+
 void testProtocol(GlbCtx_t ctx) {
 	printf("Enter in %s\n", __FUNCTION__);
 	crcInit();
 	uint8_t pdu[3] = {1, 1, DISCOVER_WIFI};
 	uint16_t crc = calculateCrc16(pdu, 3);
 	printf("crc calculated for message is 0x%04X\n", crc);
-	uint8_t message[7] = {0xFE, 1, 1, DISCOVER_WIFI, (uint8_t) (crc & 0x00FF), (uint8_t) (crc >> 8), 0xFF};
+	uint8_t rawMessage[] = {0xFE, 1, 1, DISCOVER_WIFI, (uint8_t) (crc & 0x00FF), (uint8_t) (crc >> 8), 0xFF};
+	uint8_t *stuffedMessage;
+	uint8_t *cleanMessage;
 
-	printMessage(message, 7);// Displays the FF
+	printf("Raw ");// rawMessage and clean/unstuffed Message should be the same
+	printMessage(rawMessage, 7);// Displays the FF
+	printf("Stuffed ");// Message as it should be receive from client
+	stuffedMessage = txRawFrame(rawMessage);
+	int stuffedSz = getStuffedMessageLength(stuffedMessage);
+//	printf("Stuffed message size is %d\n", stuffedSz);
+	printMessage(stuffedMessage, stuffedSz);
+	printf("Unstuffed ");// Message as it should be processed in embed
+	cleanMessage = rxRawFrame(stuffedMessage);
+	printMessage(cleanMessage, 7);
+
+	if(stuffedMessage) free(stuffedMessage);
+	if(cleanMessage) free(cleanMessage);
+	printf("************************************************\n");
+
 //	printf("Message is %s\n", message);
 	printf("1st\n");
-	deserialize(ctx, message);
+	deserialize(ctx, rawMessage);
 	printf("2nd\n");
-	deserialize(ctx, message);
+	deserialize(ctx, rawMessage);
+
 
 	printf("Clean context\n");
 	destroyContext(ctx);

@@ -28,6 +28,8 @@
 #ifndef COMMUNICATIONPROTOCOL_H_
 #define COMMUNICATIONPROTOCOL_H_
 
+extern uint8_t * rxRawFrame(uint8_t *messageStuffed);
+extern uint8_t * txRawFrame(uint8_t *message);
 extern int deserialize(GlbCtx_t ctx, unsigned char *rxData);
 extern uint16_t calculateCrc16(uint8_t *message, int nBytes);
 extern void testProtocol(GlbCtx_t ctx);
