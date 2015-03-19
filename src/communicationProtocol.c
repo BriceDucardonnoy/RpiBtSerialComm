@@ -61,6 +61,7 @@ int deserialize(GlbCtx_t ctx, unsigned char *rxData) {
 	int sz;
 	int crcInd;
 	int cmd;
+	int ret;
 
 	if(isInitialized == FALSE) {
 		printf("Initialize crc\n");
@@ -84,17 +85,24 @@ int deserialize(GlbCtx_t ctx, unsigned char *rxData) {
 		// Check CRC
 		printf("crc ind is %d => CRC_MSB = 0x%02X and CRC_LSB = 0x%02X\n", crcInd, rxData[crcInd], rxData[crcInd + 1]);
 		uint16_t rxCrc = (rxData[crcInd] << 8) | rxData[crcInd + 1];
-		printf("crc calculated is 0x%04X and got in message is 0x%04X\n", calculateCrc16(&rxData[1], sz + 2), rxCrc);
-		if(htons(rxCrc) != calculateCrc16(&rxData[1], sz + 2)) {
+		uint16_t calculatedCrc = calculateCrc16(&rxData[1], sz + 2);
+		printf("crc calculated is 0x%04X and got in message is 0x%04X\n", calculatedCrc, htons(rxCrc));
+		if(htons(rxCrc) != calculatedCrc) {
 			printf("BAD CRC\n");
 			return EXIT_FAILURE;
 		}
 		else {
 			printf("GOOD CRC\n");
 //			(*ctx->commMethods[0])(NULL);
-			// XXX BDY: for now, consider we always have no parameters and return the same structure. For scan, update ctx rather than returning the result?
 //			ctx->wHead = (*ctx->commMethods[cmd])(NULL);
-			return callFunction(cmd, NULL);
+			stArgs_t args = malloc(sizeof(struct stArgs));
+			args->ctx = ctx;
+			args->array = rxData;
+			args->arrayLength = sz + 3;// Because sz is at index 2
+			ret = callFunction(cmd, args);
+			args->ctx = NULL;
+			free(args);
+			return ret;
 		}
 		// TODO BDY: undo the byte stuffing if needed to translate the message
 	}
@@ -168,9 +176,8 @@ static void printMessage(uint8_t *message, int len) {
 	printf("\n");
 }
 
-void test(void) {
+void testProtocol(GlbCtx_t ctx) {
 	printf("Enter in %s\n", __FUNCTION__);
-	GlbCtx_t ctx = initContext();
 	crcInit();
 	uint8_t pdu[3] = {1, 1, DISCOVER_WIFI};
 	uint16_t crc = calculateCrc16(pdu, 3);

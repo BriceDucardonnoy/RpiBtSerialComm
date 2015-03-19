@@ -47,6 +47,8 @@ typedef struct iwscan_state
  *
  * Look for the visible WiFi network and return a list of network.
  * It's up to the caller to free the list of network with clean_wireless_scan_head_content method.
+ *
+ * \return EXIT_SUCCESS or EXIT_FAILURE
  */
 extern int scanWifi(stArgs_t args);
 /*!

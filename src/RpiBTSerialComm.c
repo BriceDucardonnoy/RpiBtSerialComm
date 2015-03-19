@@ -73,9 +73,9 @@ int main(int argc, char **argv) {
 static int testRpi(GlbCtx_t ctx, int argc, char **argv) {
 	if(strstr(argv[1], "ScanWifi") != NULL) {
 		printf("Test wifi scan\n");
-	//			(*ctx->commMethods[0])(NULL);// Normal call
-	//			if((ctx->wHead = scanWifi()) == NULL) {// Classic call
-	//			if((ctx->wHead = (wireless_scan_head*) (*ctx->commMethods[0])(NULL)) == NULL) {
+//		(*ctx->commMethods[0])(NULL);// Normal call
+//		if((ctx->wHead = scanWifi()) == NULL) {// Classic call
+//		if((ctx->wHead = (wireless_scan_head*) (*ctx->commMethods[0])(NULL)) == NULL) {
 		stArgs_t args = malloc(sizeof(struct stArgs));
 		args->ctx = ctx;
 		int ret = commMethods[0](args);
@@ -86,7 +86,7 @@ static int testRpi(GlbCtx_t ctx, int argc, char **argv) {
 	}
 	else if(strstr(argv[1], "TestProtocol") != NULL) {
 		printf("Test protocol\n");
-		test();
+		testProtocol(ctx);
 	}
 	return EXIT_SUCCESS;
 }

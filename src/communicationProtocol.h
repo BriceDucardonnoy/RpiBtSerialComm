@@ -30,6 +30,6 @@
 
 extern int deserialize(GlbCtx_t ctx, unsigned char *rxData);
 extern uint16_t calculateCrc16(uint8_t *message, int nBytes);
-extern void test(void);
+extern void testProtocol(GlbCtx_t ctx);
 
 #endif /* COMMUNICATIONPROTOCOL_H_ */
