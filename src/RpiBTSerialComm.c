@@ -37,7 +37,8 @@
 
 static int testRpi(GlbCtx_t ctx, int argc, char **argv);
 
-static int (*commMethods[NB_COMMANDS]) (stArgs_t args) = { scanWifi };
+static int (*commMethods[]) (stArgs_t args) = { scanWifi };
+//static commFunc[NB_COMMANDS];
 
 int main(int argc, char **argv) {
 	GlbCtx_t ctx = initContext();
