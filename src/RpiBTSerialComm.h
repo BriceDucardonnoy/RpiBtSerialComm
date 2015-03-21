@@ -38,13 +38,14 @@ typedef struct {
 //	void * (*commMethods[NB_COMMANDS]) (void *params);/* Function pointer array */
 	/* WiFi */
 	wireless_scan_head *wHead;/* Scan array response */
-} GlbCtx;
-typedef GlbCtx * GlbCtx_t;
+} glbCtx;
+typedef glbCtx * glbCtx_t;
 
 typedef struct stArgs {
-	GlbCtx_t ctx;
-	uint8_t *array;
-	int arrayLength;
+	glbCtx_t ctx;
+	uint8_t *array;/* The raw message received from remote GUI */
+	int arrayLength;/* The lenght of <array> */
+	uint8_t *output;/* Response to send to the request interpreted in <array> */
 } stArgs, *stArgs_t;
 
 typedef struct stCommFunc {
@@ -53,8 +54,8 @@ typedef struct stCommFunc {
 } stCommFunc, *stCommFunc_t;
 
 
-extern GlbCtx_t initContext(void);
-extern void destroyContext(GlbCtx_t ctx);
+extern glbCtx_t initContext(void);
+extern void destroyContext(glbCtx_t ctx);
 extern int callFunction(int funcCode, stArgs_t args);
 
 #endif /* RPIBTSERIALCOMM_H_ */

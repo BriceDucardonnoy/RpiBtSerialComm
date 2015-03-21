@@ -37,7 +37,7 @@
 
 #define FUNC(X) {.commMethods = X}
 
-static int testRpi(GlbCtx_t ctx, int argc, char **argv);
+static int testRpi(glbCtx_t ctx, int argc, char **argv);
 
 // TODO BDY: monitor signal for stop condition in main loop in bluetoothUtils.c
 
@@ -49,7 +49,7 @@ static stCommFunc commFuncs[] = {
 };
 
 int main(int argc, char **argv) {
-	GlbCtx_t ctx = initContext();
+	glbCtx_t ctx = initContext();
 	/* Old tests */
 //	simpleScan();// For the fun
 //	rfcommServer();
@@ -80,7 +80,7 @@ int main(int argc, char **argv) {
 	return EXIT_SUCCESS;
 }
 
-static int testRpi(GlbCtx_t ctx, int argc, char **argv) {
+static int testRpi(glbCtx_t ctx, int argc, char **argv) {
 	if(strstr(argv[1], "ScanWifi") != NULL) {
 		printf("Test wifi scan\n");
 //		if((ctx->wHead = (wireless_scan_head*) (*ctx->commMethods[0])(NULL)) == NULL) {
@@ -107,8 +107,8 @@ int callFunction(int funcCode, stArgs_t args) {
 	return EXIT_ABORT;
 }
 
-GlbCtx_t initContext(void) {
-	GlbCtx_t ctx = malloc(sizeof(GlbCtx));
+glbCtx_t initContext(void) {
+	glbCtx_t ctx = malloc(sizeof(glbCtx));
 //	ctx->wHead = malloc(sizeof(wireless_scan_head));
 
 	/* Init commands for communication protocol */
@@ -116,7 +116,7 @@ GlbCtx_t initContext(void) {
 	return ctx;
 }
 
-void destroyContext(GlbCtx_t ctx) {
+void destroyContext(glbCtx_t ctx) {
 	if(!ctx) return ;
 	if(ctx->wHead) {
 		cleanWirelessScanHeadContent(ctx->wHead);

@@ -37,11 +37,11 @@ extern int initAndTalkWithBTDevice(void);
  * @param timeout The timeout in s
  * @returns a File Descriptor of the connection done if a client has required a connection, -1 if nobody comes after a timeout
  */
-extern int wait4connect(GlbCtx_t ctx, int timeout);
+extern int wait4connect(glbCtx_t ctx, int timeout);
 /*! \brief Brief description.
  *         Brief description continued.
  *
  *  Detailed description starts here.
  */
-extern int readAndRepeat(GlbCtx_t ctx);
+extern int readAndRepeat(glbCtx_t ctx);
 #endif /* BLUETOOTHUTILS_H_ */

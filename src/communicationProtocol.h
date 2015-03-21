@@ -30,8 +30,9 @@
 
 extern uint8_t * rxRawFrame(uint8_t *messageStuffed);
 extern uint8_t * txRawFrame(uint8_t *message);
-extern int deserializeAndProcessCmd(GlbCtx_t ctx, unsigned char *rxData);
+extern int deserializeAndProcessCmd(glbCtx_t ctx, unsigned char *rxData);
+extern int serializeAndAnswer(stArgs_t args);
 extern uint16_t calculateCrc16(uint8_t *message, int nBytes);
-extern void testProtocol(GlbCtx_t ctx);
+extern void testProtocol(glbCtx_t ctx);
 
 #endif /* COMMUNICATIONPROTOCOL_H_ */

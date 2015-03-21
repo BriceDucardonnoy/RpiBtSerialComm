@@ -86,7 +86,7 @@ int simpleScan(void) {
  * @param timeout The timeout in s
  * @returns a File Descriptor of the connection done if a client has required a connection, -1 if nobody comes after a timeout
  */
-int wait4connect(GlbCtx_t ctx, int timeout) {
+int wait4connect(glbCtx_t ctx, int timeout) {
 	printf("Enter in %s\n", __FUNCTION__);
 	struct sockaddr_rc loc_addr = { 0 }, rem_addr = { 0 };
 	char buf[1024] = { 0 };
@@ -148,7 +148,7 @@ int wait4connect(GlbCtx_t ctx, int timeout) {
  *
  *  Detailed description starts here.
  */
-int readAndRepeat(GlbCtx_t ctx) {
+int readAndRepeat(glbCtx_t ctx) {
 	uint8_t buf[1024] = { 0 };
 	int bytes_read;
 	printf("Enter in %s\n", __FUNCTION__);
@@ -164,13 +164,13 @@ int readAndRepeat(GlbCtx_t ctx) {
 //				printf("Discover WiFi asked\n");
 //				// TODO BDY: here is the communication deserialize job
 //			}
-//			deserializeAndProcessCmd(ctx, buf);
+			deserializeAndProcessCmd(ctx, buf);
 			usleep(500000);// Half second
 			printf("Write %d bytes\n", bytes_read);
-//			if(write(ctx->clienttFd, buf, bytes_read) != bytes_read) {
-			if(write(ctx->clienttFd, "patate\r\n", 8) != 8) {
-				fprintf(stderr, "Failed to write: %d::%s\n", errno, strerror(errno));
-			}
+////			if(write(ctx->clienttFd, buf, bytes_read) != bytes_read) {
+//			if(write(ctx->clienttFd, "patate\r\n", 8) != 8) {// Always answer "patate" for now
+//				fprintf(stderr, "Failed to write: %d::%s\n", errno, strerror(errno));
+//			}
 		}
 	} while(TRUE);
 //	} while(strstr(buf, "EOC") == NULL);

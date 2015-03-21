@@ -45,6 +45,8 @@
  * FF => FD 02
  */
 #include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
 #include <netinet/in.h>
 
 #include "constants.h"
@@ -132,9 +134,10 @@ uint8_t * txRawFrame(uint8_t *message) {
 }
 
 /*
- * Functions to (de)serialize the clean message without byte stuffing
+ * Functions to (de)serialize the clean message without byte stuffing and execute the command and answer
  */
-int deserializeAndProcessCmd(GlbCtx_t ctx, unsigned char *rxData) {
+int deserializeAndProcessCmd(glbCtx_t ctx, unsigned char *rxData) {
+	printf("Enter in %s\n", __FUNCTION__);
 	static int isInitialized = FALSE;
 	uint8_t *message;
 	int version;
@@ -186,6 +189,9 @@ int deserializeAndProcessCmd(GlbCtx_t ctx, unsigned char *rxData) {
 			args->array = message;
 			args->arrayLength = sz + 3 + 3;// Because sz is at index 2
 			ret = callFunction(cmd, args);
+			if(args->output > 0) {
+				ret = serializeAndAnswer(args);
+			}
 			args->ctx = NULL;
 			free(args);
 			return ret;
@@ -199,9 +205,26 @@ int deserializeAndProcessCmd(GlbCtx_t ctx, unsigned char *rxData) {
 	return EXIT_SUCCESS;
 }
 
-int serialize(uint8_t message) {
-	// TODO BDY: NYI
-	return 0;
+int serializeAndAnswer(stArgs_t args) {
+	printf("Enter in %s\n", __FUNCTION__);
+	uint8_t *stuffedMessage = txRawFrame(args->output);
+	int sz = args->output[1] == 1 ? args->output[2] + 3 + 3 : 0;
+	int smSz = getStuffedMessageLength(stuffedMessage);
+	printf("Raw answer (%d bytes): ", sz);
+	printMessage(args->output, sz);
+	printf("Stuffed answer (%d bytes): ", smSz);
+	printMessage(stuffedMessage, smSz);
+	//
+	smSz += 2;
+	args->output = realloc(stuffedMessage, smSz);
+	args->output[smSz - 2] = 13;// \r
+	args->output[smSz - 1] = 10;// \n
+	//
+	if(write(args->ctx->clienttFd, stuffedMessage, smSz) != smSz) {
+		fprintf(stderr, "Failed to write: %d::%s\n", errno, strerror(errno));
+	}
+	free(stuffedMessage);
+	return EXIT_SUCCESS;
 }
 
 static void crcInit(void) {
@@ -264,7 +287,7 @@ static int getStuffedMessageLength(uint8_t *stuffedMessage) {
 	return -1;
 }
 
-void testProtocol(GlbCtx_t ctx) {
+void testProtocol(glbCtx_t ctx) {
 	printf("Enter in %s\n", __FUNCTION__);
 	crcInit();
 	uint8_t pdu[3] = {1, 1, DISCOVER_WIFI};
