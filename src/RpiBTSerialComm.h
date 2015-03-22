@@ -57,5 +57,6 @@ typedef struct stCommFunc {
 extern glbCtx_t initContext(void);
 extern void destroyContext(glbCtx_t ctx);
 extern int callFunction(int funcCode, stArgs_t args);
+extern void cleanArgs(stArgs_t args);
 
 #endif /* RPIBTSERIALCOMM_H_ */

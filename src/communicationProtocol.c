@@ -190,10 +190,11 @@ int deserializeAndProcessCmd(glbCtx_t ctx, unsigned char *rxData) {
 			args->arrayLength = 3 + sz + 3;// Because sz is at index 2
 //			args->ctx->sockFd = stdout;
 			ret = callFunction(cmd, args);
-			if(args->output > 0) {
+			if(args->output) {
 				ret = serializeAndAnswer(args);
 			}
 			args->ctx = NULL;
+			cleanArgs(args);
 			free(args);
 			return ret;
 		}
@@ -215,16 +216,21 @@ int serializeAndAnswer(stArgs_t args) {
 	printMessage(args->output, sz);
 	printf("Stuffed answer (%d bytes): ", smSz);
 	printMessage(stuffedMessage, smSz);
+	if(smSz < 0) {
+		printf("No answer to write\n");
+		free(stuffedMessage);
+		return EXIT_ABORT;
+	}
 	//
 	smSz += 2;
-	args->output = realloc(stuffedMessage, smSz);
-	args->output[smSz - 2] = 13;// \r
-	args->output[smSz - 1] = 10;// \n
+	stuffedMessage = realloc(stuffedMessage, smSz);
+	stuffedMessage[smSz - 2] = 13;// \r
+	stuffedMessage[smSz - 1] = 10;// \n
 	//
 	if(write(args->ctx->clienttFd, stuffedMessage, smSz) != smSz) {
 		fprintf(stderr, "Failed to write: %d::%s\n", errno, strerror(errno));
 	}
-	free(stuffedMessage);
+	if(stuffedMessage) free(stuffedMessage);
 	return EXIT_SUCCESS;
 }
 

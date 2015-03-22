@@ -125,6 +125,19 @@ void destroyContext(glbCtx_t ctx) {
 	free(ctx);
 }
 
+void cleanArgs(stArgs_t args) {
+	printf("Enter in function %s\n", __FUNCTION__);
+	if(!args) return;
+	if(args->array) {
+		free(args->array);
+		args->array = NULL;
+	}
+	if(args->output) {
+		free(args->output);
+		args->output = NULL;
+	}
+}
+
 // TODO BDY: monitor signals for scan anc pairing
 // TODO BDY: test with Valgrind
 

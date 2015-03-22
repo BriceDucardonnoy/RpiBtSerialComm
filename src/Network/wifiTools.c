@@ -81,18 +81,26 @@ int scanWifi(stArgs_t args) {
 			sizeof(result->stats.qual.noise) +
 			sizeof(result->stats.qual.qual) +
 			4;// MAX("on\0", "off\0")
-	int i = 0;
+	printf("Output size = %d\n", outputSz);
+	int i = 1;
 	while (NULL != result) {
 		// Increase size of output to add the new record
-		args->output = realloc(args->output, sizeof(args->output) + outputSz);
-		printf("Ouput size is now %d", sizeof(args->output));
-		memcpy(&args->output[i * outputSz], result->b.essid, sizeof(result->b.essid));// ESSID
-		args->output[i * outputSz + sizeof(result->b.essid)] = result->stats.qual.level;// Level
-		args->output[i * outputSz + sizeof(result->b.essid) + sizeof(result->stats.qual.level)] = result->stats.qual.noise;// Noise
-		args->output[i * outputSz + sizeof(result->b.essid) + sizeof(result->stats.qual.level) + sizeof(result->stats.qual.qual)] = result->stats.qual.qual;// Quality
-		memcpy(&args->output[i*outputSz + sizeof(result->b.essid) + sizeof(result->stats.qual.level) + sizeof(result->stats.qual.qual) + sizeof(result->stats.qual.qual)],
-				(result->b.key_flags & IW_ENCODE_DISABLED) == 0 ? "on\0" : "off\0", 4);// Encryption
-
+		printf("patate for %d\n", i * outputSz);
+		uint8_t * outputRealloc = realloc(args->output, i * outputSz);
+		printf("patate2\n");
+		if(!outputRealloc) {
+			fprintf(stderr, "Failed to realloc more space. Stop operation.\n");
+			ret = EXIT_FAILURE;
+			break;
+		}
+		args->output = outputRealloc;
+		printf("Output size is now %d\n", i * outputSz);
+//		memcpy(&args->output[i * outputSz], result->b.essid, sizeof(result->b.essid));// ESSID
+//		args->output[i * outputSz + sizeof(result->b.essid)] = result->stats.qual.level;// Level
+//		args->output[i * outputSz + sizeof(result->b.essid) + sizeof(result->stats.qual.level)] = result->stats.qual.noise;// Noise
+//		args->output[i * outputSz + sizeof(result->b.essid) + sizeof(result->stats.qual.level) + sizeof(result->stats.qual.qual)] = result->stats.qual.qual;// Quality
+//		memcpy(&args->output[i*outputSz + sizeof(result->b.essid) + sizeof(result->stats.qual.level) + sizeof(result->stats.qual.qual) + sizeof(result->stats.qual.qual)],
+//				(result->b.key_flags & IW_ENCODE_DISABLED) == 0 ? "on\0" : "off\0", 4);// Encryption
 
 		printf("%s (sz:%d): level=%u, noise=%u, quality=%u, crypted=0x%08X, Encryption key=%s\n",
 			result->b.essid,
@@ -102,9 +110,10 @@ int scanWifi(stArgs_t args) {
 			result->stats.qual.qual,
 			result->b.key_flags,
 			(result->b.key_flags & IW_ENCODE_DISABLED) == 0 ? "on" : "off");
+
 		result = result->next;
+		i++;
 	}
-	// TODO BDY: write now in args->output the answer
 
 CleanAll:
 //	printf("Clean all\n");
