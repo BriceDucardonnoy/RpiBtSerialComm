@@ -187,7 +187,8 @@ int deserializeAndProcessCmd(glbCtx_t ctx, unsigned char *rxData) {
 			stArgs_t args = malloc(sizeof(struct stArgs));
 			args->ctx = ctx;
 			args->array = message;
-			args->arrayLength = sz + 3 + 3;// Because sz is at index 2
+			args->arrayLength = 3 + sz + 3;// Because sz is at index 2
+//			args->ctx->sockFd = stdout;
 			ret = callFunction(cmd, args);
 			if(args->output > 0) {
 				ret = serializeAndAnswer(args);
