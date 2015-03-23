@@ -24,7 +24,30 @@
  * arising from, out of or in connection with the software or the use or other 
  * dealings in the Software.
  */
-
+/*
+ * Protocol V1
+ * FE<header><cmd>[<parameters>]<CRC>FF
+ * =>
+ * FE-ProtocolVersion-Size-CMD-Parameters-CRC16-FF
+ * ------------------------------------------------
+ * Max size is 255 bytes
+ * Command ID can't be 0xFE or 0xFF (not managed yet because of optimistic code in serializeAndAnswer function)
+ * - Header: 2 bytes
+ * 		Version number: 1 byte
+ * 		Byte count of <cmd> and <parameters>: 1 byte
+ * - Command: ID of the command to execute. Depending of this one, parameters are present.
+ * - CRC: 2 bytes from frame without FE and FF
+ *
+ * Example in hexa of DISCOVER_WIFI request in protocol V1:
+ * FE-Version-SZ-CMD-CRC_MSB-CRC_LSB-FF
+ * FE-01	 -01-00 -CRC_MSB-CRC_LSB-FF
+ *
+ * Byte stuffing applied to the serialized packet
+ * ----------------------------------------------
+ * FD => FD 00
+ * FE => FD 01
+ * FF => FD 02
+ */
 #ifndef COMMUNICATIONPROTOCOL_H_
 #define COMMUNICATIONPROTOCOL_H_
 

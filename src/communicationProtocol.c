@@ -27,7 +27,11 @@
 /*
  * Protocol V1
  * FE<header><cmd>[<parameters>]<CRC>FF
+ * =>
+ * FE-ProtocolVersion-Size-CMD-Parameters-CRC16-FF
+ * ------------------------------------------------
  * Max size is 255 bytes
+ * Command ID can't be 0xFE or 0xFF (not managed yet because of optimistic code in serializeAndAnswer function)
  * - Header: 2 bytes
  * 		Version number: 1 byte
  * 		Byte count of <cmd> and <parameters>: 1 byte
@@ -174,9 +178,9 @@ int deserializeAndProcessCmd(glbCtx_t ctx, unsigned char *rxData) {
 		// Check CRC
 		printf("crc ind is %d => CRC_MSB = 0x%02X and CRC_LSB = 0x%02X\n", crcInd, message[crcInd], message[crcInd + 1]);
 		uint16_t rxCrc = (message[crcInd] << 8) | message[crcInd + 1];
-		uint16_t calculatedCrc = calculateCrc16(&message[1], sz + 2);
+		uint16_t calculatedCrc = calculateCrc16(&message[1], sz + 2);// sz (:cmd + parameters) + protocol + size
 		printf("crc calculated is 0x%04X and got in message is 0x%04X\n", calculatedCrc, htons(rxCrc));
-		if(htons(rxCrc) != calculatedCrc) {
+		if(ntohs(rxCrc) != calculatedCrc) {
 			printf("BAD CRC\n");
 			return EXIT_FAILURE;
 		}
@@ -186,8 +190,8 @@ int deserializeAndProcessCmd(glbCtx_t ctx, unsigned char *rxData) {
 //			ctx->wHead = (*ctx->commMethods[cmd])(NULL);
 			stArgs_t args = malloc(sizeof(struct stArgs));
 			args->ctx = ctx;
-			args->array = message;
-			args->arrayLength = 3 + sz + 3;// Because sz is at index 2
+			args->input = message;
+			args->inputLength = 3 + sz + 3;// Because sz is at index 2
 //			args->ctx->sockFd = stdout;
 			ret = callFunction(cmd, args);
 			if(args->output) {
@@ -199,39 +203,60 @@ int deserializeAndProcessCmd(glbCtx_t ctx, unsigned char *rxData) {
 			return ret;
 		}
 	}
-	else {
-		fprintf(stderr, "Version %u unknown. Skip operation.\n", message[1]);
-		return EXIT_ABORT;
-	}
+	fprintf(stderr, "Version %u unknown. Skip operation.\n", message[1]);
+	return EXIT_ABORT;
 
 	return EXIT_SUCCESS;
 }
 
 int serializeAndAnswer(stArgs_t args) {
 	printf("Enter in %s\n", __FUNCTION__);
-	uint8_t *stuffedMessage = txRawFrame(args->output);
-	int sz = args->output[1] == 1 ? args->output[2] + 3 + 3 : 0;
-	int smSz = getStuffedMessageLength(stuffedMessage);
-	printf("Raw answer (%d bytes): ", sz);
-	printMessage(args->output, sz);
-	printf("Stuffed answer (%d bytes): ", smSz);
-	printMessage(stuffedMessage, smSz);
-	if(smSz < 0) {
-		printf("No answer to write\n");
-		free(stuffedMessage);
-		return EXIT_ABORT;
+	int protocol = args->input[1];
+	int smSz;
+	int outSz = 1 + 2 + 1 + args->outputLength + 2 + 1;// FE + (Protocol Version + Sz) + CMD + output + CRC16 + FF
+	uint16_t crc;
+	uint8_t *stuffedMessage;
+	uint8_t *fullOutput = malloc(outSz);
+
+	fullOutput[0] = 0xFE;
+	fullOutput[1] = protocol;
+
+	if(protocol == 1) {
+		fullOutput[2] = 1 + args->outputLength;// Size includes CMD + parameters (output in case of answer)
+		fullOutput[3] = args->input[3];// Command
+		memcpy(fullOutput + 4, args->output, args->outputLength);
+		// CRC
+		crc = htons(calculateCrc16(fullOutput + 1, args->outputLength + 3));// Output and (protocol and size and command)
+		memcpy(fullOutput + 4 + args->outputLength, &crc, 2);
+		fullOutput[4 + args->outputLength + 2] = 0xFF;// + 2: CRC
+		// Full output is now completed => parse it to the byte stuffing
+		stuffedMessage = txRawFrame(fullOutput);
+		smSz = getStuffedMessageLength(stuffedMessage);
+		printf("Raw answer (%d bytes): ", outSz);
+		printMessage(fullOutput, outSz);
+		printf("Stuffed answer (%d bytes): ", smSz);
+		printMessage(stuffedMessage, smSz);
+		if(smSz < 0) {
+			printf("No answer to write\n");
+			if(stuffedMessage) free(stuffedMessage);
+			free(fullOutput);
+			return EXIT_ABORT;
+		}
+		smSz += 2;
+		stuffedMessage = realloc(stuffedMessage, smSz);
+		stuffedMessage[smSz - 2] = 13;// \r
+		stuffedMessage[smSz - 1] = 10;// \n
+		//
+		printf("Write answer\n");
+		if(write(args->ctx->clienttFd, stuffedMessage, smSz) != smSz) {
+			fprintf(stderr, "Failed to write: %d::%s\n", errno, strerror(errno));
+		}
+		if(stuffedMessage) free(stuffedMessage);
+		free(fullOutput);
+		return EXIT_SUCCESS;
 	}
-	//
-	smSz += 2;
-	stuffedMessage = realloc(stuffedMessage, smSz);
-	stuffedMessage[smSz - 2] = 13;// \r
-	stuffedMessage[smSz - 1] = 10;// \n
-	//
-	if(write(args->ctx->clienttFd, stuffedMessage, smSz) != smSz) {
-		fprintf(stderr, "Failed to write: %d::%s\n", errno, strerror(errno));
-	}
-	if(stuffedMessage) free(stuffedMessage);
-	return EXIT_SUCCESS;
+	fprintf(stderr, "Version %u unknown. Skip operation.\n", protocol);
+	return EXIT_ABORT;
 }
 
 static void crcInit(void) {
@@ -258,7 +283,7 @@ static void crcInit(void) {
 
 }
 
-uint16_t calculateCrc16(uint8_t *message, int nBytes) {
+crc_t calculateCrc16(uint8_t *message, int nBytes) {
 	uint8_t uiData;
 	crc_t remainder = 0;
 	int byte;

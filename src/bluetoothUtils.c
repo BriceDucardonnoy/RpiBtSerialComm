@@ -158,15 +158,10 @@ int readAndRepeat(glbCtx_t ctx) {
 		memset(buf, 0, sizeof(buf));
 		bytes_read = read(ctx->clienttFd, buf, sizeof(buf) - 1);
 		if(bytes_read > 0) {
-			printf("Received some data\n");
+			printf("Received %d bytes\n", bytes_read);
 //			printf("received [%s]\n", buf);
-//			if(strstr(buf, "DISCOVER_WIFI") != NULL) {
-//				printf("Discover WiFi asked\n");
-//				// TODO BDY: here is the communication deserialize job
-//			}
 			deserializeAndProcessCmd(ctx, buf);
 			usleep(500000);// Half second
-			printf("Write %d bytes\n", bytes_read);
 ////			if(write(ctx->clienttFd, buf, bytes_read) != bytes_read) {
 //			if(write(ctx->clienttFd, "patate\r\n", 8) != 8) {// Always answer "patate" for now
 //				fprintf(stderr, "Failed to write: %d::%s\n", errno, strerror(errno));

@@ -43,9 +43,10 @@ typedef glbCtx * glbCtx_t;
 
 typedef struct stArgs {
 	glbCtx_t ctx;
-	uint8_t *array;/* The raw message received from remote GUI */
-	int arrayLength;/* The lenght of <array> */
+	uint8_t *input;/* The raw message received from remote GUI */
+	int inputLength;/* The length of <input> */
 	uint8_t *output;/* Response to send to the request interpreted in <array> */
+	int outputLength;/* The length of <output> */
 } stArgs, *stArgs_t;
 
 typedef struct stCommFunc {

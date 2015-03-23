@@ -75,6 +75,7 @@ int scanWifi(stArgs_t args) {
 	/* Traverse the results */
 	result = args->ctx->wHead->result;
 	args->output = NULL;
+	args->outputLength = 0;// CMD
 	int	outputSz =
 			sizeof(result->b.essid) +
 			sizeof(result->stats.qual.level) +
@@ -109,8 +110,10 @@ int scanWifi(stArgs_t args) {
 			(char *)&args->output[i * outputSz + sizeof(result->b.essid) + sizeof(result->stats.qual.level) +
 								  sizeof(result->stats.qual.qual) + sizeof(result->stats.qual.qual)]);
 		// TODO BDY: make some define for the offset
+		// TODO BDY: update outlength
 //			(result->b.key_flags & IW_ENCODE_DISABLED) == 0 ? "on" : "off");
 
+		args->outputLength += outputSz;
 		result = result->next;
 		i++;
 	}

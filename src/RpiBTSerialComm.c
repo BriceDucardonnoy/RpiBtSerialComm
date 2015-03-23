@@ -128,9 +128,9 @@ void destroyContext(glbCtx_t ctx) {
 void cleanArgs(stArgs_t args) {
 	printf("Enter in function %s\n", __FUNCTION__);
 	if(!args) return;
-	if(args->array) {
-		free(args->array);
-		args->array = NULL;
+	if(args->input) {
+		free(args->input);
+		args->input = NULL;
 	}
 	if(args->output) {
 		free(args->output);
