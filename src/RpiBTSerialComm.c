@@ -28,6 +28,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <signal.h>
 
 #include "constants.h"
 #include "RpiBTSerialComm.h"
@@ -39,14 +40,42 @@
 
 static int testRpi(glbCtx_t ctx, int argc, char **argv);
 
-// TODO BDY: monitor signal for stop condition in main loop in bluetoothUtils.c
-
 //static int (*commMethods[]) (stArgs_t args) = { scanWifi };
 static stCommFunc commFuncs[] = {
 //	{.commMethods = scanWifi},
 	FUNC(scanWifi),
 	{ NULL }
 };
+int running;
+
+void sigterm_handler(int sig) {
+	// SIGTERM is sent by process SandBoxMng to notify the sandbox to gracefully exit
+	printf("sigterm caught !\n");
+	running = FALSE;
+}
+
+
+void sigsegv_handler(int sig) {
+	fprintf(stderr, "sigsegv caught !\n");
+	// FIXME BDY: __dump_call_stack
+//	__dump_call_stack();
+	exit(EXIT_FAILURE);
+}
+
+
+void register_signal_handlers(void) {
+	struct sigaction TERM_action;
+	TERM_action.sa_handler  = sigterm_handler;
+	sigemptyset(&TERM_action.sa_mask);
+	TERM_action.sa_flags    = SA_RESTART;
+	sigaction(SIGTERM,  &TERM_action, NULL);
+
+	struct sigaction SEGV_action;
+	SEGV_action.sa_handler  = sigsegv_handler;
+	sigemptyset(&SEGV_action.sa_mask);
+	SEGV_action.sa_flags    = SA_RESTART;
+	sigaction(SIGSEGV,  &SEGV_action, NULL);
+}
 
 int main(int argc, char **argv) {
 	glbCtx_t ctx = initContext();
@@ -65,8 +94,10 @@ int main(int argc, char **argv) {
 		fprintf(stderr, "Failed during wait4connect\n");
 		return EXIT_FAILURE;
 	}
+	running = TRUE;
 	// Infinite loop
 	readAndRepeat(ctx);
+	running = FALSE;
 	// Close all FD
 	if(ctx->clienttFd >= 0) {
 		puts("Close accept FD");
@@ -108,7 +139,7 @@ int callFunction(int funcCode, stArgs_t args) {
 }
 
 glbCtx_t initContext(void) {
-	glbCtx_t ctx = malloc(sizeof(glbCtx));
+	glbCtx_t ctx = calloc(1, sizeof(glbCtx));
 //	ctx->wHead = malloc(sizeof(wireless_scan_head));
 
 	/* Init commands for communication protocol */

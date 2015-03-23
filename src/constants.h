@@ -35,6 +35,8 @@
 #include "stdint.h"
 #include "wireless/iwlib.h"
 
+extern int running;
+
 /*
  * The width of the CRC calculation and result.
  * Modify the typedef for a 16 or 32-bit CRC standard.

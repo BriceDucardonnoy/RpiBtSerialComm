@@ -167,7 +167,7 @@ int readAndRepeat(glbCtx_t ctx) {
 //				fprintf(stderr, "Failed to write: %d::%s\n", errno, strerror(errno));
 //			}
 		}
-	} while(TRUE);
+	} while(running);// TESTME BDY: test with bluetooth device
 //	} while(strstr(buf, "EOC") == NULL);
 
 	return 0;
