@@ -51,8 +51,8 @@
 #ifndef COMMUNICATIONPROTOCOL_H_
 #define COMMUNICATIONPROTOCOL_H_
 
-extern uint8_t * rxRawFrame(uint8_t *messageStuffed);
-extern uint8_t * txRawFrame(uint8_t *message);
+extern uint8_t * unbyteStuffFrame(uint8_t *messageStuffed);
+extern uint8_t * byteStuffRawFrame(uint8_t *message, int rawSz);
 extern int deserializeAndProcessCmd(glbCtx_t ctx, unsigned char *rxData);
 extern int serializeAndAnswer(stArgs_t args);
 extern uint16_t calculateCrc16(uint8_t *message, int nBytes);

@@ -62,12 +62,12 @@
 static crc_t crcTable[256];
 static void crcInit(void);
 static void printMessage(uint8_t *message, int len);
-static int getStuffedMessageLength(uint8_t *stuffedMessage);
+static int getStuffedMessageLength(uint8_t *stuffedMessage, int rawSz);
 
 /*
  * Functions to apply / remove the byte stuffing into the message
  */
-uint8_t * rxRawFrame(uint8_t *messageStuffed) {
+uint8_t * unbyteStuffFrame(uint8_t *messageStuffed) {
 	uint8_t *message = malloc(MAX_PACKET_LENGTH);// Size of packet is 1 byte so the unstuffed packet can't be more than 255 bytes
 	int i, cur, j;
 
@@ -96,10 +96,10 @@ uint8_t * rxRawFrame(uint8_t *messageStuffed) {
 	return message;
 }
 
-uint8_t * txRawFrame(uint8_t *message) {
-	uint8_t *messageStuffed = malloc(MAX_PACKET_LENGTH*2);// Size of packet is 1 byte so the stuffed packet in worst case can be more than 255*2 bytes
+uint8_t * byteStuffRawFrame(uint8_t *message, int rawSz) {
+	uint8_t *messageStuffed = malloc(rawSz*2);// Size of packet is 1 byte so the stuffed packet in worst case can be more than rawSz*2 bytes
 	int i, j;
-	int sz = message[1] == 1 ? message[2] + 3 + 3 : 0;
+//	int sz = message[1] == 1 ? message[2] + 3 + 3 : 0;
 	/*
 	 * If version is 1, message size is
 	 * <declared sz> at index 2
@@ -108,8 +108,8 @@ uint8_t * txRawFrame(uint8_t *message) {
 	 */
 //	printf("SZ = %d\n", sz);
 
-	for(i = 0, j = 0 ; i < sz ; i++) {
-		if(i == 0 || i == sz - 1 || // We don't apply byte stuffing on flags themselves
+	for(i = 0, j = 0 ; i < rawSz ; i++) {
+		if(i == 0 || i == rawSz - 1 || // We don't apply byte stuffing on flags themselves
 				(message[i] != 0xFD && message[i] != 0xFE && message[i] != 0xFF)) {
 			messageStuffed[j++] = message[i];
 			continue;
@@ -155,7 +155,7 @@ int deserializeAndProcessCmd(glbCtx_t ctx, unsigned char *rxData) {
 		crcInit();
 		isInitialized = TRUE;
 	}
-	message = rxRawFrame(rxData);
+	message = unbyteStuffFrame(rxData);
 	version = message[1];
 	if(!message) {
 		fprintf(stderr, "Failed to remove byte stuffing\n");
@@ -230,8 +230,8 @@ int serializeAndAnswer(stArgs_t args) {
 		memcpy(fullOutput + 4 + args->outputLength, &crc, 2);
 		fullOutput[4 + args->outputLength + 2] = 0xFF;// + 2: CRC
 		// Full output is now completed => parse it to the byte stuffing
-		stuffedMessage = txRawFrame(fullOutput);
-		smSz = getStuffedMessageLength(stuffedMessage);
+		stuffedMessage = byteStuffRawFrame(fullOutput, outSz);
+		smSz = getStuffedMessageLength(stuffedMessage, outSz);
 		printf("Raw answer (%d bytes): ", outSz);
 		printMessage(fullOutput, outSz);
 		printf("Stuffed answer (%d bytes): ", smSz);
@@ -310,9 +310,9 @@ static void printMessage(uint8_t *message, int len) {
 	printf("\n");
 }
 
-static int getStuffedMessageLength(uint8_t *stuffedMessage) {
+static int getStuffedMessageLength(uint8_t *stuffedMessage, int rawSz) {
 	int i = 0;
-	while(i < MAX_PACKET_LENGTH) {
+	while(i < (rawSz * 2)) {// Size of packet is 1 byte so the stuffed packet in worst case can be more than rawSz*2 bytes
 		if(stuffedMessage[i] == 0xFF) return ++i;// include this last byte
 		i++;
 	}
@@ -332,12 +332,12 @@ void testProtocol(glbCtx_t ctx) {
 	printf("Raw ");// rawMessage and clean/unstuffed Message should be the same
 	printMessage(rawMessage, 7);// Displays the FF
 	printf("Stuffed ");// Message as it should be receive from client
-	stuffedMessage = txRawFrame(rawMessage);
-	int stuffedSz = getStuffedMessageLength(stuffedMessage);
+	stuffedMessage = byteStuffRawFrame(rawMessage, 7);
+	int stuffedSz = getStuffedMessageLength(stuffedMessage, 7);
 //	printf("Stuffed message size is %d\n", stuffedSz);
 	printMessage(stuffedMessage, stuffedSz);
 	printf("Unstuffed ");// Message as it should be processed in embed
-	cleanMessage = rxRawFrame(stuffedMessage);
+	cleanMessage = unbyteStuffFrame(stuffedMessage);
 	printMessage(cleanMessage, 7);
 
 	printf("************************************************\n");

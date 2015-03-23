@@ -138,6 +138,6 @@ void cleanArgs(stArgs_t args) {
 	}
 }
 
-// TODO BDY: monitor signals for scan anc pairing
+// TODO BDY: monitor signals for scan pairing
 // TODO BDY: test with Valgrind
 
