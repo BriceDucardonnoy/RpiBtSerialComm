@@ -60,9 +60,6 @@
 #include "communicationProtocol.h"
 
 /* Communication */
-#define WIDTH  (8 * sizeof(crc_t))
-#define TOPBIT (1 << (WIDTH - 1))
-#define POLYNOMIAL 0x8005
 //#define POLYNOMIAL 0xC0C1
 
 #define MAX_PACKET_LENGTH 256
