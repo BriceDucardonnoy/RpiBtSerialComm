@@ -275,6 +275,7 @@ int serializeAndAnswer(stArgs_t args) {
 			free(fullOutput);
 			return EXIT_ABORT;
 		}
+		// Add \r\n because receiver device is expected it as end of response
 		smSz += 2;
 		stuffedMessage = realloc(stuffedMessage, smSz);
 		stuffedMessage[smSz - 2] = 13;// \r
