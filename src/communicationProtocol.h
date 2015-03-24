@@ -57,6 +57,10 @@ extern uint8_t * unbyteStuffFrame(uint8_t *messageStuffed);
 extern uint8_t * byteStuffRawFrame(uint8_t *message, int rawSz);
 extern int deserializeAndProcessCmd(glbCtx_t ctx, uint8_t *rxData);
 extern int serializeAndAnswer(stArgs_t args);
+/*
+ * \brief Calculates the CRC16 with polynome 0xC0C1
+ * Calculates the CRC16 with polynome 0xC0C1. CRC gotten is already big-endian order
+ */
 extern uint16_t calculateCrc16(uint8_t *message, int nBytes);
 extern void testProtocol(glbCtx_t ctx);
 

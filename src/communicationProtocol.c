@@ -53,7 +53,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <netinet/in.h>
 
 #include "constants.h"
 #include "Network/wifiTools.h"
@@ -213,8 +212,8 @@ int deserializeAndProcessCmd(glbCtx_t ctx, uint8_t *rxData) {
 		printf("crc ind is %d => CRC_MSB = 0x%02X and CRC_LSB = 0x%02X\n", crcInd, message[crcInd], message[crcInd + 1]);
 		uint16_t rxCrc = (message[crcInd] << 8) | message[crcInd + 1];
 		uint16_t calculatedCrc = calculateCrc16(&message[1], sz + 2);// sz (:cmd + parameters) + protocol + size
-		printf("crc calculated is 0x%04X and got in message is 0x%04X\n", calculatedCrc, htons(rxCrc));
-		if(ntohs(rxCrc) != calculatedCrc) {
+		printf("crc calculated is 0x%04X and got in message is 0x%04X\n", calculatedCrc, rxCrc);
+		if(rxCrc != calculatedCrc) {
 			printf("BAD CRC\n");
 			return EXIT_FAILURE;
 		}
@@ -293,7 +292,10 @@ int serializeAndAnswer(stArgs_t args) {
 	return EXIT_ABORT;
 }
 
-
+/*
+ * \brief Calculates the CRC16 with polynome 0xC0C1
+ * Calculates the CRC16 with polynome 0xC0C1. CRC gotten is already big-endian order
+ */
 uint16_t calculateCrc16(uint8_t *message, int nBytes) {
 	uint16_t remainder = 0;
 	int byte;
@@ -336,7 +338,7 @@ void testProtocol(glbCtx_t ctx) {
 	uint8_t pdu[3] = {1, 1, DISCOVER_WIFI};
 	uint16_t crc = calculateCrc16(pdu, 3);
 	printf("crc calculated for message is 0x%04X\n", crc);
-	uint8_t rawMessage[] = {0xFE, 1, 1, DISCOVER_WIFI, (uint8_t) (crc & 0x00FF), (uint8_t) (crc >> 8), 0xFF};
+	uint8_t rawMessage[] = {0xFE, 1, 1, DISCOVER_WIFI, (uint8_t) (crc >> 8), (uint8_t) (crc & 0x00FF), 0xFF};
 	uint8_t *stuffedMessage;
 	uint8_t *cleanMessage;
 
