@@ -20,10 +20,6 @@
 
 /* BlueTooth */
 #define RX_BUFFER_SIZE	1024
-/* Communication */
-#define WIDTH  (8 * sizeof(crc_t))
-#define TOPBIT (1 << (WIDTH - 1))
-#define POLYNOMIAL 0x8005
 
 /* CODE FUNCTION */
 #define NB_COMMANDS		1
@@ -38,11 +34,5 @@
 #include "wireless/iwlib.h"
 
 extern int running;
-
-/*
- * The width of the CRC calculation and result.
- * Modify the typedef for a 16 or 32-bit CRC standard.
- */
-typedef uint16_t crc_t;
 
 #endif /* CONSTANTS_H_ */

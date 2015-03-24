@@ -47,6 +47,8 @@
  * FD => FD 00
  * FE => FD 01
  * FF => FD 02
+ *
+ * For CRC calcul, see http://introcs.cs.princeton.edu/java/51data/CRC16.java.html
  */
 #ifndef COMMUNICATIONPROTOCOL_H_
 #define COMMUNICATIONPROTOCOL_H_
