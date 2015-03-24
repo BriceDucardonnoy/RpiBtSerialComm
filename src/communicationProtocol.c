@@ -140,8 +140,9 @@ uint8_t * byteStuffRawFrame(uint8_t *message, int rawSz) {
 /*
  * Functions to (de)serialize the clean message without byte stuffing and execute the command and answer
  */
-int deserializeAndProcessCmd(glbCtx_t ctx, unsigned char *rxData) {
+int deserializeAndProcessCmd(glbCtx_t ctx, uint8_t *rxData) {
 	printf("Enter in %s\n", __FUNCTION__);
+	printMessage(rxData, getStuffedMessageLength(rxData, -1));
 	static int isInitialized = FALSE;
 	uint8_t *message;
 	int version;
@@ -303,6 +304,7 @@ crc_t calculateCrc16(uint8_t *message, int nBytes) {
  */
 static void printMessage(uint8_t *message, int len) {
 	int i;
+	if(len == -1) len = RX_BUFFER_SIZE;
 	printf("Message: ");
 	for(i = 0 ; i < len ; i++) {
 		printf("0x%02X ", message[i]);
@@ -312,6 +314,7 @@ static void printMessage(uint8_t *message, int len) {
 
 static int getStuffedMessageLength(uint8_t *stuffedMessage, int rawSz) {
 	int i = 0;
+	if(rawSz == -1) rawSz = RX_BUFFER_SIZE;
 	while(i < (rawSz * 2)) {// Size of packet is 1 byte so the stuffed packet in worst case can be more than rawSz*2 bytes
 		if(stuffedMessage[i] == 0xFF) return ++i;// include this last byte
 		i++;
@@ -345,6 +348,7 @@ void testProtocol(glbCtx_t ctx) {
 //	printf("Message is %s\n", message);
 	printf("1st\n");
 	deserializeAndProcessCmd(ctx, stuffedMessage);
+	printf("------------------------------------------------\n");
 	printf("2nd\n");
 	deserializeAndProcessCmd(ctx, stuffedMessage);
 

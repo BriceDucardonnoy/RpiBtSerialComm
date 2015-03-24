@@ -53,7 +53,7 @@
 
 extern uint8_t * unbyteStuffFrame(uint8_t *messageStuffed);
 extern uint8_t * byteStuffRawFrame(uint8_t *message, int rawSz);
-extern int deserializeAndProcessCmd(glbCtx_t ctx, unsigned char *rxData);
+extern int deserializeAndProcessCmd(glbCtx_t ctx, uint8_t *rxData);
 extern int serializeAndAnswer(stArgs_t args);
 extern uint16_t calculateCrc16(uint8_t *message, int nBytes);
 extern void testProtocol(glbCtx_t ctx);

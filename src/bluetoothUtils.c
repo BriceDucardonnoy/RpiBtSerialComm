@@ -149,7 +149,7 @@ int wait4connect(glbCtx_t ctx, int timeout) {
  *  Detailed description starts here.
  */
 int readAndRepeat(glbCtx_t ctx) {
-	uint8_t buf[1024] = { 0 };
+	uint8_t buf[RX_BUFFER_SIZE] = { 0 };
 	int bytes_read;
 	printf("Enter in %s\n", __FUNCTION__);
 

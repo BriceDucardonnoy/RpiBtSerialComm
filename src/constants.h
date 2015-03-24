@@ -18,6 +18,8 @@
 #define TIMEOUTWAITING4ANS_SEC	5000
 #define TIMEOUTAFTERANS_SEC		20
 
+/* BlueTooth */
+#define RX_BUFFER_SIZE	1024
 /* Communication */
 #define WIDTH  (8 * sizeof(crc_t))
 #define TOPBIT (1 << (WIDTH - 1))
