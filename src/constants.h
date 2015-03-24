@@ -17,6 +17,7 @@
 #define EXIT_ABORT				-1
 #define TIMEOUTWAITING4ANS_SEC	5000
 #define TIMEOUTAFTERANS_SEC		20
+#define PROTOCOL_VERSION		1
 
 /* BlueTooth */
 #define RX_BUFFER_SIZE	1024

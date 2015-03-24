@@ -199,6 +199,17 @@ int deserializeAndProcessCmd(glbCtx_t ctx, uint8_t *rxData) {
 		fprintf(stderr, "The start flag isn't present. Skip operation.\n");
 		return EXIT_ABORT;
 	}
+	if(version == 0) {
+		// Wild card. Remote is asking the protocol version.
+		uint8_t ver[] = {0xFE, 0, PROTOCOL_VERSION, 0xFF};//, 13, 10};
+		printf("Version asked. ");
+		printMessage(ver, 4);
+		if(write(ctx->clienttFd, &ver, 4) != 4) {
+			fprintf(stderr, "Failed to write: %d::%s\n", errno, strerror(errno));
+			return EXIT_FAILURE;
+		}
+		return EXIT_SUCCESS;
+	}
 	if(version == 1) {
 		sz = message[2];
 		cmd = message[3];
@@ -275,11 +286,11 @@ int serializeAndAnswer(stArgs_t args) {
 			free(fullOutput);
 			return EXIT_ABORT;
 		}
-		// Add \r\n because receiver device is expected it as end of response
-		smSz += 2;
-		stuffedMessage = realloc(stuffedMessage, smSz);
-		stuffedMessage[smSz - 2] = 13;// \r
-		stuffedMessage[smSz - 1] = 10;// \n
+//		// Add \r\n because receiver device is expected it as end of response
+//		smSz += 2;
+//		stuffedMessage = realloc(stuffedMessage, smSz);
+//		stuffedMessage[smSz - 2] = 13;// \r
+//		stuffedMessage[smSz - 1] = 10;// \n
 		//
 		printf("Write answer\n");
 		if(write(args->ctx->clienttFd, stuffedMessage, smSz) != smSz) {
