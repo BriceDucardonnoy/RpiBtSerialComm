@@ -97,7 +97,6 @@ int main(int argc, char **argv) {
 	running = TRUE;
 	// Infinite loop
 	readAndRepeat(ctx);
-	running = FALSE;
 	// Close all FD
 	if(ctx->clienttFd >= 0) {
 		puts("Close accept FD");
