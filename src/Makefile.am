@@ -12,6 +12,7 @@ bin_PROGRAMS=sewSerialComm
 
 sewSerialComm_SOURCES= \
 	Ttys/ttys.c \
+	Network/networkManagement.c \
 	Network/wifiTools.c \
 	bluetoothUtils.c \
 	communicationProtocol.c \

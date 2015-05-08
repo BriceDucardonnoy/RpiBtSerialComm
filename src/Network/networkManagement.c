@@ -1,8 +1,8 @@
 /*
  * ============================================================================
- * Name        : RpiBTSerialComm.h
+ * Name        : networkManagement.c
  * Author      : Brice DUCARDONNOY
- * Created on  : 19 mars 2015
+ * Created on  : 8 mai 2015
  * Version     :
  * Copyright   : Copyright © 2015 Brice DUCARDONNOY
  * Description : Program in C
@@ -25,40 +25,4 @@
  * dealings in the Software.
  */
 
-#ifndef RPIBTSERIALCOMM_H_
-#define RPIBTSERIALCOMM_H_
 
-//typedef void * func_pointer(int);
-/* Global structure */
-typedef struct {
-	/* BlueTooth communication */
-	int sockFd;/* FD for BlueTooth serial communication */
-	int clienttFd;/* Another FD... */
-	/* Communication protocol */
-//	void * (*commMethods[NB_COMMANDS]) (void *params);/* Function pointer array */
-	/* WiFi */
-	wireless_scan_head *wHead;/* Scan array response */
-} glbCtx;
-typedef glbCtx * glbCtx_t;
-
-typedef struct stArgs {
-	glbCtx_t ctx;
-	uint8_t *input;/* The raw message received from remote GUI */
-	int inputLength;/* The length of <input> */
-	uint8_t *output;/* Response to send to the request interpreted in <array> */
-	int outputLength;/* The length of <output> */
-} stArgs, *stArgs_t;
-
-typedef struct stCommFunc {
-	int (*commMethods) (stArgs_t args);
-	// ...
-} stCommFunc, *stCommFunc_t;
-
-
-extern glbCtx_t initContext(void);
-extern void destroyContext(glbCtx_t ctx);
-extern int callFunction(int funcCode, stArgs_t args);
-extern void cleanArgs(stArgs_t args);
-extern int stopPairing(stArgs_t args);
-
-#endif /* RPIBTSERIALCOMM_H_ */
