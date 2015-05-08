@@ -69,6 +69,7 @@ void register_signal_handlers(void) {
 	sigemptyset(&TERM_action.sa_mask);
 	TERM_action.sa_flags    = SA_RESTART;
 	sigaction(SIGTERM,  &TERM_action, NULL);
+	sigaction(SIGINT,  &TERM_action, NULL);
 
 	struct sigaction SEGV_action;
 	SEGV_action.sa_handler  = sigsegv_handler;

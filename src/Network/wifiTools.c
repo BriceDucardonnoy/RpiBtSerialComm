@@ -81,7 +81,7 @@ int scanWifi(stArgs_t args) {
 			sizeof(result->stats.qual.level) +
 			sizeof(result->stats.qual.noise) +
 			sizeof(result->stats.qual.qual) +
-			4;// MAX("on\0", "off\0")
+			sizeof(char);
 	int i = 0;
 	while (NULL != result) {
 		// Increase size of output to add the new record
@@ -97,8 +97,8 @@ int scanWifi(stArgs_t args) {
 		args->output[i * outputSz + sizeof(result->b.essid)] = result->stats.qual.level;// Level
 		args->output[i * outputSz + sizeof(result->b.essid) + sizeof(result->stats.qual.level)] = result->stats.qual.noise;// Noise
 		args->output[i * outputSz + sizeof(result->b.essid) + sizeof(result->stats.qual.level) + sizeof(result->stats.qual.qual)] = result->stats.qual.qual;// Quality
-		memcpy(&args->output[i*outputSz + sizeof(result->b.essid) + sizeof(result->stats.qual.level) + sizeof(result->stats.qual.qual) + sizeof(result->stats.qual.qual)],
-				(result->b.key_flags & IW_ENCODE_DISABLED) == 0 ? "on\0" : "off\0", 4);// Encryption
+		args->output[i*outputSz + sizeof(result->b.essid) + sizeof(result->stats.qual.level) + sizeof(result->stats.qual.qual) + sizeof(result->stats.qual.qual)] =
+				((result->b.key_flags & IW_ENCODE_DISABLED) == 0) ? 1 : 0;// Encryption
 
 		printf("%s (sz:%d): level=%u, noise=%u, quality=%u, crypted=0x%08X, Encryption key=%s\n",
 			(char *)(args->output + (i * outputSz)),
@@ -107,8 +107,8 @@ int scanWifi(stArgs_t args) {
 			args->output[i * outputSz + sizeof(result->b.essid) + sizeof(result->stats.qual.level)],// Noise
 			args->output[i * outputSz + sizeof(result->b.essid) + sizeof(result->stats.qual.level) + sizeof(result->stats.qual.qual)],// Quality
 			result->b.key_flags,// Encryption
-			(char *)&args->output[i * outputSz + sizeof(result->b.essid) + sizeof(result->stats.qual.level) +
-								  sizeof(result->stats.qual.qual) + sizeof(result->stats.qual.qual)]);
+			(args->output[i * outputSz + sizeof(result->b.essid) + sizeof(result->stats.qual.level) +
+				sizeof(result->stats.qual.qual) + sizeof(result->stats.qual.qual)] == 1) ? "yes\0" : "no\0");
 		// TODO BDY: make some define for the offset
 //		(result->b.key_flags & IW_ENCODE_DISABLED) == 0 ? "on" : "off");
 

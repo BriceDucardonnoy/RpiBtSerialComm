@@ -354,7 +354,7 @@ void testProtocol(glbCtx_t ctx) {
 	uint8_t *stuffedMessage;
 	uint8_t *cleanMessage;
 
-	printf("Raw ");// rawMessage and clean/unstuffed Message should be the same
+	printf("Raw discover WIFI ");// rawMessage and clean/unstuffed Message should be the same
 	printMessage(rawMessage, 7);// Displays the FF
 	printf("Stuffed ");// Message as it should be receive from client
 	stuffedMessage = byteStuffRawFrame(rawMessage, 7);
