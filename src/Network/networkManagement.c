@@ -45,6 +45,7 @@
 
 static void printData(networkConf conf);
 static void readGateways(networkConf_t conf, char *devname);
+static void readDns(networkConf_t conf);
 
 int readIPAddresses(stArgs_t args)
 {
@@ -84,7 +85,9 @@ int readIPAddresses(stArgs_t args)
 
     // Gateway
     readGateways(conf, ethName);
+
     // DNS
+    readDns(conf);
 
 	printData(*conf);
 //	memcpy(args->output, conf, sizeof(networkConf));
@@ -131,6 +134,68 @@ static void readGateways(networkConf_t conf, char *devname) {
 		}
 	}
 	fclose(routeFd);
+}
+
+static void readDns(networkConf_t conf) {
+	FILE *dnsFd;
+	char dns[128];
+	char *p;
+	int dnsIdx = 0;
+
+	dnsFd = fopen("/etc/resolv.conf", "r");
+	if (!dnsFd) {
+		fprintf(stderr, "Fail to open /etc/resolv.conf: %d::%s\n", errno, strerror(errno));
+		return;
+	}
+
+	while (fgets(dns, 128, dnsFd)) {
+		if(dnsIdx >= 2) break;
+		if (strncmp(dns, "nameserver", 10) == 0) {
+//			printf("read <%s>\n", dns);
+			p = &dns[11];
+			while (*p == ' ' || *p == '\t') {
+				p++;
+			}
+			if(*p) {
+				char *line = strsep(&p, "\n");
+				char *dns1, *dns2;
+				dns1 = strtok(line, " ");
+				dns2 = strtok(NULL, " ");
+				printf("1st elem <%s>\n", dns1);
+				printf("2nd elem <%s>\n", dns2);
+				if(dns1 != NULL) {
+					switch(dnsIdx) {
+					case 0:
+						strncpy(conf->primaryDns, dns1, IFNAMSIZ - 1);
+						dnsIdx++;
+						break;
+					case 1:
+						strncpy(conf->secondaryDns, dns1, IFNAMSIZ - 1);
+						dnsIdx++;
+						break;
+					default:
+						break;
+					};
+				}// DNS1 != NULL
+				if(dns2 != NULL) {
+					switch(dnsIdx) {
+					case 0:
+						strncpy(conf->primaryDns, dns2, IFNAMSIZ - 1);
+						dnsIdx++;
+						break;
+					case 1:
+						strncpy(conf->secondaryDns, dns2, IFNAMSIZ - 1);
+						dnsIdx++;
+						break;
+					default:
+						break;
+					};
+				}// DNS2 != NULL
+			}
+		}
+	}
+
+	fclose(dnsFd);
 }
 
 static void printData(networkConf conf) {
