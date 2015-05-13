@@ -118,7 +118,7 @@ int scanWifi(stArgs_t args) {
 	}
 
 CleanAll:
-//	printf("Clean all\n");
+	printf("%s: Clean all\n", __FUNCTION__);
 	iw_sockets_close(skfd);
 	if(ret != EXIT_SUCCESS) {
 		printf("Failure append, so clean wireless scan result\n");

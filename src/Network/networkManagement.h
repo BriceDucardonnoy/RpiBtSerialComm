@@ -31,11 +31,13 @@
 typedef struct networkConf {
 	int isDhcp;/* No need to put this flag on a byte because of alignment */
 	int isWifi;
-	char *address;
-	char *netmask;
-	char *gateway;
-	char *primaryDns;
-	char *secondaryDns;
+	char address[IFNAMSIZ];
+	char netmask[IFNAMSIZ];
+	char gateway[IFNAMSIZ];
+	char primaryDns[IFNAMSIZ];
+	char secondaryDns[IFNAMSIZ];
 } networkConf, *networkConf_t;
+
+extern int readIPAddresses(stArgs_t args);
 
 #endif /* NETWORK_NETWORKMANAGEMENT_H_ */

@@ -35,6 +35,7 @@
 #include "bluetoothUtils.h"
 #include "Network/wifiTools.h"
 #include "communicationProtocol.h"
+#include "Network/networkManagement.h"
 
 #define FUNC(X) {.commMethods = X}
 
@@ -85,39 +86,6 @@ void register_signal_handlers(void) {
 	sigaction(SIGSEGV,  &SEGV_action, NULL);
 }
 
-int main(int argc, char **argv) {
-	glbCtx_t ctx = initContext();
-	/* Old tests */
-//	simpleScan();// For the fun
-//	rfcommServer();
-//	return initAndTalkWithBTDevice();
-
-	// Tests
-	if(argc == 2) {
-		return testRpi(ctx, argc, argv);
-	}
-	// End of tests
-
-	if(wait4connect(ctx, 20) != 0) {
-		fprintf(stderr, "Failed during wait4connect\n");
-		return EXIT_FAILURE;
-	}
-	running = TRUE;
-	// Infinite loop
-	readAndRepeat(ctx);
-	// Close all FD
-	if(ctx->clienttFd >= 0) {
-		puts("Close accept FD");
-		close(ctx->clienttFd);
-	}
-	if(ctx->sockFd >= 0) {
-		puts("Close socket FD");
-		close(ctx->sockFd);
-	}
-	destroyContext(ctx);
-	return EXIT_SUCCESS;
-}
-
 static int testRpi(glbCtx_t ctx, int argc, char **argv) {
 	if(strstr(argv[1], "ScanWifi") != NULL) {
 		printf("Test wifi scan\n");
@@ -134,6 +102,10 @@ static int testRpi(glbCtx_t ctx, int argc, char **argv) {
 	else if(strstr(argv[1], "TestProtocol") != NULL) {
 		printf("Test protocol\n");
 		testProtocol(ctx);
+	}
+	else if(strstr(argv[1], "TestGetNetwork") != NULL) {
+		printf("Get Network\n");
+		readIPAddresses(NULL);
 	}
 	return EXIT_SUCCESS;
 }
@@ -174,6 +146,39 @@ void cleanArgs(stArgs_t args) {
 		free(args->output);
 		args->output = NULL;
 	}
+}
+
+int main(int argc, char **argv) {
+	glbCtx_t ctx = initContext();
+	/* Old tests */
+//	simpleScan();// For the fun
+//	rfcommServer();
+//	return initAndTalkWithBTDevice();
+
+	// Tests
+	if(argc == 2) {
+		return testRpi(ctx, argc, argv);
+	}
+	// End of tests
+
+	if(wait4connect(ctx, 20) != 0) {
+		fprintf(stderr, "Failed during wait4connect\n");
+		return EXIT_FAILURE;
+	}
+	running = TRUE;
+	// Infinite loop
+	readAndRepeat(ctx);
+	// Close all FD
+	if(ctx->clienttFd >= 0) {
+		puts("Close accept FD");
+		close(ctx->clienttFd);
+	}
+	if(ctx->sockFd >= 0) {
+		puts("Close socket FD");
+		close(ctx->sockFd);
+	}
+	destroyContext(ctx);
+	return EXIT_SUCCESS;
 }
 
 // TODO BDY: monitor signals for scan pairing

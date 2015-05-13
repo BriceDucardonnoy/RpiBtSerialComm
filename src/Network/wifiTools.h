@@ -30,7 +30,6 @@
 
 #include "../constants.h"
 #include "../RpiBTSerialComm.h"
-#include "wireless/iwlib.h"
 
 /*
  * Scan state and meta-information, used to decode events...

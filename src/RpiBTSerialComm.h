@@ -28,6 +28,7 @@
 #ifndef RPIBTSERIALCOMM_H_
 #define RPIBTSERIALCOMM_H_
 
+#include "wireless/iwlib.h"
 //typedef void * func_pointer(int);
 /* Global structure */
 typedef struct {
