@@ -47,14 +47,16 @@ static void printData(networkConf conf);
 static void readGateways(networkConf_t conf, char *devname);
 static void readDns(networkConf_t conf);
 
+static char *ifnames[2] = {"wlan0", "eth0"};
+
 int readIPAddresses(stArgs_t args)
 {
 	int fd;
 	int ret = EXIT_SUCCESS;
 	struct ifreq ifr;
 	networkConf_t conf = NULL;
-	char *ethName = "eth0";
-	char *wifiName = "wlan0";
+//	char *ifname = "eth0";
+	char *ifname = ifnames[0];
 
 
 	fd = socket(AF_INET, SOCK_DGRAM, 0);
@@ -63,15 +65,24 @@ int readIPAddresses(stArgs_t args)
 		return EXIT_FAILURE;
 	}
 	ifr.ifr_addr.sa_family = AF_INET;
-	strncpy(ifr.ifr_name, ethName, IFNAMSIZ-1);
+	strncpy(ifr.ifr_name, ifname, IFNAMSIZ-1);
 
 	conf = calloc(1, sizeof(networkConf));
 
 	// Address
 	if(ioctl(fd, SIOCGIFADDR, &ifr) < 0) {
-		fprintf(stderr, "Failed to get IP address: %d::%s\n", errno, strerror(errno));
-		ret = EXIT_FAILURE;
-		goto CleanAll;
+		fprintf(stderr, "Failed to get IP address for %s: %d::%s\n", ifname, errno, strerror(errno));
+		// Failed on WLAN => try now on LAN
+		ifname = ifnames[1];
+		strncpy(ifr.ifr_name, ifname, IFNAMSIZ-1);
+		if(ioctl(fd, SIOCGIFADDR, &ifr) < 0) {
+			fprintf(stderr, "Failed to get IP address for %s: %d::%s\n", ifname, errno, strerror(errno));
+			ret = EXIT_FAILURE;
+			goto CleanAll;
+		}
+	}
+	else {
+		conf->isWifi = TRUE;
 	}
 	strncpy(conf->address, inet_ntoa(((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr), IFNAMSIZ - 1);
 
@@ -84,13 +95,13 @@ int readIPAddresses(stArgs_t args)
     strncpy(conf->netmask, inet_ntoa(((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr), IFNAMSIZ - 1);
 
     // Gateway
-    readGateways(conf, ethName);
+    readGateways(conf, ifname);
 
     // DNS
     readDns(conf);
 
 	printData(*conf);
-//	memcpy(args->output, conf, sizeof(networkConf));
+	memcpy(args->output, conf, sizeof(networkConf));
 
 CleanAll:
 	printf("%s: Clean all\n", __FUNCTION__);
