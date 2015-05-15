@@ -46,6 +46,7 @@ static stCommFunc commFuncs[] = {// See constants.h => define lines to know the 
 //	{.commMethods = scanWifi},
 	FUNC(scanWifi),// Discover WiFi, ID = 0
 	FUNC(stopPairing),// Stop bluetooth pairing, ID = 1
+	FUNC(readIPAddresses),// Get network status
 	{ NULL }
 };
 int running;
@@ -105,7 +106,7 @@ static int testRpi(glbCtx_t ctx, int argc, char **argv) {
 	}
 	else if(strstr(argv[1], "TestGetNetwork") != NULL) {
 		printf("Get Network\n");
-		readIPAddresses(NULL);
+		testNetwork(ctx);
 	}
 	return EXIT_SUCCESS;
 }

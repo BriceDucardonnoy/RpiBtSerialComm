@@ -101,7 +101,13 @@ int readIPAddresses(stArgs_t args)
     readDns(conf);
 
 	printData(*conf);
+	if((args->output = malloc(sizeof(networkConf))) == NULL) {
+		fprintf(stderr, "Failed to allocate memory in %s: %d::%s\n", __FUNCTION__, errno, strerror(errno));
+		ret = EXIT_FAILURE;
+		goto CleanAll;
+	}
 	memcpy(args->output, conf, sizeof(networkConf));
+	args->outputLength = (sizeof(networkConf));
 
 CleanAll:
 	printf("%s: Clean all\n", __FUNCTION__);
