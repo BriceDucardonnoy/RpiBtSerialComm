@@ -44,8 +44,9 @@
 //extern struct res_state state;
 
 static void printData(networkConf conf);
-static void readGateways(networkConf_t conf, char *devname);
-static void readDns(networkConf_t conf);
+static int readGateways(networkConf_t conf, char *devname);
+static int readStaticDhcp(networkConf_t conf, char *ifname);
+static int readDns(networkConf_t conf);
 
 static char *ifnames[2] = {"wlan0", "eth0"};
 
@@ -80,6 +81,7 @@ int readIPAddresses(stArgs_t args)
 			ret = EXIT_FAILURE;
 			goto CleanAll;
 		}
+//		conf->isWifi = FALSE;// Useless because initialized with calloc
 	}
 	else {
 		conf->isWifi = TRUE;
@@ -96,6 +98,9 @@ int readIPAddresses(stArgs_t args)
 
     // Gateway
     readGateways(conf, ifname);
+
+    // DHCP / Static
+    readStaticDhcp(conf, ifname);
 
     // DNS
     readDns(conf);
@@ -120,7 +125,7 @@ CleanAll:
     return ret;
 }
 
-static void readGateways(networkConf_t conf, char *devname) {
+static int readGateways(networkConf_t conf, char *devname) {
 	FILE *routeFd;
 	char route[256];
 	char name[64];
@@ -132,7 +137,7 @@ static void readGateways(networkConf_t conf, char *devname) {
 	routeFd = fopen("/proc/net/route", "r");
 	if (!routeFd) {
 		fprintf(stderr, "Fail to open /proc/net/route: %d::%s\n", errno, strerror(errno));
-		return;
+		return EXIT_FAILURE;
 	}
 
 	while(fgets(route, 255, routeFd)) {
@@ -151,9 +156,42 @@ static void readGateways(networkConf_t conf, char *devname) {
 		}
 	}
 	fclose(routeFd);
+	return EXIT_SUCCESS;
 }
 
-static void readDns(networkConf_t conf) {
+static int readStaticDhcp(networkConf_t conf, char *ifname) {
+	FILE *fp;
+	char buffer[16];
+	char *cmd = malloc(96);
+
+	if(sprintf(cmd, "cat /etc/network/interfaces | grep ^\"iface\\ %s \" | awk -F ' ' '{print $4}'", ifname) == 0) {
+		fprintf(stderr, "Failed to create request to know weather network is DHCP or static\n");
+		return EXIT_FAILURE;
+	}
+	printf("Request is <%s>\n", cmd);
+
+	fp = popen(cmd, "r");
+	free(cmd);
+	if(fgets(buffer, sizeof(buffer), fp) != NULL) {
+		printf("%s", buffer);
+		if(strncmp(buffer, "static", 6) == 0) {
+			conf->isDhcp = FALSE;
+		}
+		else if(strncmp(buffer, "dhcp", 4) == 0) {
+			conf->isDhcp = TRUE;
+		}
+		else {
+			fprintf(stderr, "Error, %s is neithor static nor dhcp\n", ifname);
+			pclose(fp);
+			return EXIT_FAILURE;
+		}
+
+	}
+	pclose(fp);
+	return EXIT_SUCCESS;
+}
+
+static int readDns(networkConf_t conf) {
 	FILE *dnsFd;
 	char dns[128];
 	char *p;
@@ -162,7 +200,7 @@ static void readDns(networkConf_t conf) {
 	dnsFd = fopen("/etc/resolv.conf", "r");
 	if (!dnsFd) {
 		fprintf(stderr, "Fail to open /etc/resolv.conf: %d::%s\n", errno, strerror(errno));
-		return;
+		return EXIT_FAILURE;
 	}
 
 	while (fgets(dns, 128, dnsFd)) {
@@ -213,6 +251,7 @@ static void readDns(networkConf_t conf) {
 	}
 
 	fclose(dnsFd);
+	return EXIT_SUCCESS;
 }
 
 static void printData(networkConf conf) {
@@ -221,8 +260,12 @@ static void printData(networkConf conf) {
 			"\tNetmask: %s\n"
 			"\tGateway: %s\n"
 			"\tDNS1: %s\n"
-			"\tDNS2: %s\n",
-			conf.address, conf.netmask, conf.gateway, conf.primaryDns, conf.secondaryDns);
+			"\tDNS2: %s\n"
+			"\tWiFi/LAN: %s\n"
+			"\tStatic/DHCP: %s\n",
+			conf.address, conf.netmask, conf.gateway, conf.primaryDns, conf.secondaryDns,
+			conf.isWifi == FALSE ? "LAN" : "WiFi",
+			conf.isDhcp == FALSE ? "Static" : "DHCP");
 }
 
 /*
