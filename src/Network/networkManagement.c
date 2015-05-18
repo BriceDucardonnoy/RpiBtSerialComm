@@ -33,15 +33,9 @@
 #include <string.h>
 #include <arpa/inet.h>
 
-//#include <netinet/in.h>
-//#include <arpa/nameser.h>
-//#include <resolv.h>
-
 #include "../RpiBTSerialComm.h"
 #include "networkManagement.h"
 #include "../constants.h"
-
-//extern struct res_state state;
 
 static void printData(networkConf conf);
 static int readGateways(networkConf_t conf, char *devname);
@@ -56,7 +50,6 @@ int readIPAddresses(stArgs_t args)
 	int ret = EXIT_SUCCESS;
 	struct ifreq ifr;
 	networkConf_t conf = NULL;
-//	char *ifname = "eth0";
 	char *ifname = ifnames[0];
 
 
@@ -106,13 +99,15 @@ int readIPAddresses(stArgs_t args)
     readDns(conf);
 
 	printData(*conf);
+
+	// Copy result into output
 	if((args->output = malloc(sizeof(networkConf))) == NULL) {
 		fprintf(stderr, "Failed to allocate memory in %s: %d::%s\n", __FUNCTION__, errno, strerror(errno));
 		ret = EXIT_FAILURE;
 		goto CleanAll;
 	}
 	memcpy(args->output, conf, sizeof(networkConf));
-	args->outputLength = (sizeof(networkConf));
+	args->outputLength = sizeof(networkConf);
 
 CleanAll:
 	printf("%s: Clean all\n", __FUNCTION__);
