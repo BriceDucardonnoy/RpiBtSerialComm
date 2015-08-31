@@ -38,6 +38,7 @@
 #include "../constants.h"
 
 static void printData(networkConf conf);
+static int readWifi(networkConf_t conf, char *ifname);
 static int readGateways(networkConf_t conf, char *devname);
 static int readStaticDhcp(networkConf_t conf, char *ifname);
 static int readDns(networkConf_t conf);
@@ -64,20 +65,23 @@ int readIPAddresses(stArgs_t args)
 	conf = calloc(1, sizeof(networkConf));
 
 	// Address
-	if(ioctl(fd, SIOCGIFADDR, &ifr) < 0) {
-		fprintf(stderr, "Failed to get IP address for %s: %d::%s\n", ifname, errno, strerror(errno));
+	int rc = ioctl(fd, SIOCGIFADDR, &ifr);
+	if(rc >= 0) {// WiFi found
+		conf->isWifi = TRUE;
+		printf("Get IP from %s\n", ifname);
+		rc = readWifi(conf, ifname);
+	}
+	if(rc < 0) {
+		fprintf(stderr, "Failed to get IP address for %s: %d::%s. Try with %s.\n", ifname, errno, strerror(errno), ifnames[1]);
 		// Failed on WLAN => try now on LAN
 		ifname = ifnames[1];
+		conf->isWifi = FALSE;
 		strncpy(ifr.ifr_name, ifname, IFNAMSIZ-1);
 		if(ioctl(fd, SIOCGIFADDR, &ifr) < 0) {
 			fprintf(stderr, "Failed to get IP address for %s: %d::%s\n", ifname, errno, strerror(errno));
 			ret = EXIT_FAILURE;
 			goto CleanAll;
 		}
-//		conf->isWifi = FALSE;// Useless because initialized with calloc
-	}
-	else {
-		conf->isWifi = TRUE;
 	}
 	strncpy(conf->address, inet_ntoa(((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr), IFNAMSIZ - 1);
 
@@ -97,6 +101,11 @@ int readIPAddresses(stArgs_t args)
 
     // DNS
     readDns(conf);
+
+    // WiFi
+    if(conf->isWifi) {
+    	readWifi(conf, ifname);
+    }
 
 	printData(*conf);
 
@@ -118,6 +127,23 @@ CleanAll:
 	if(conf) free(conf);
 
     return ret;
+}
+
+static int readWifi(networkConf_t conf, char *ifname) {
+	wireless_config config;
+	int skfd;
+	if((skfd = iw_sockets_open()) < 0) {
+		perror("Socket");
+		return EXIT_FAILURE;
+	}
+	int rc = iw_get_basic_config(skfd, ifnames[0], &config);
+	printf("WIFI ESSID: (%d) %s::%d\n", rc, config.essid, config.has_essid);
+	iw_sockets_close(skfd);
+	if(config.has_essid) {
+		strncpy(conf->essid, config.essid, IW_ESSID_MAX_SIZE - 1);
+		return 0;
+	}
+	return -1;
 }
 
 static int readGateways(networkConf_t conf, char *devname) {
@@ -257,9 +283,11 @@ static void printData(networkConf conf) {
 			"\tDNS1: %s\n"
 			"\tDNS2: %s\n"
 			"\tWiFi/LAN: %s\n"
+			"\tESSID: %s\n"
 			"\tStatic/DHCP: %s\n",
 			conf.address, conf.netmask, conf.gateway, conf.primaryDns, conf.secondaryDns,
 			conf.isWifi == FALSE ? "LAN" : "WiFi",
+			conf.isWifi == TRUE ? conf.essid : "<>",
 			conf.isDhcp == FALSE ? "Static" : "DHCP");
 }
 

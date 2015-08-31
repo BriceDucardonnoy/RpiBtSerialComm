@@ -40,6 +40,7 @@
 #define FUNC(X) {.commMethods = X}
 
 static int testRpi(glbCtx_t ctx, int argc, char **argv);
+// TODO BDY: makefile.am with subfolder
 
 //static int (*commMethods[]) (stArgs_t args) = { scanWifi };
 static stCommFunc commFuncs[] = {// See constants.h => define lines to know the order of the functions
