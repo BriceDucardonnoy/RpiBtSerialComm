@@ -49,6 +49,10 @@
 #define DISCONNECT		1
 #define GET_NETWORK		2
 
+/* Network specific */
+#define NETWORK_LAN		0x00
+#define NETWORK_WIFI	0x01
+
 /* WiFi */
 #define IW_SCAN_HACK			0x8000
 

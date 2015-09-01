@@ -36,7 +36,6 @@ typedef struct networkConf {
 	char gateway[IFNAMSIZ];
 	char primaryDns[IFNAMSIZ];
 	char secondaryDns[IFNAMSIZ];
-	// TODO BDY: add essid and pwd?
 	char essid[IW_ESSID_MAX_SIZE];
 } networkConf, *networkConf_t;
 

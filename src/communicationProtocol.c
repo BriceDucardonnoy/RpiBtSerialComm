@@ -347,10 +347,10 @@ static int getStuffedMessageLength(uint8_t *stuffedMessage, int rawSz) {
 void testProtocol(glbCtx_t ctx) {
 	printf("Enter in %s\n", __FUNCTION__);
 //	crcInit();
-	uint8_t pdu[3] = {1, 1, DISCOVER_WIFI};
+	uint8_t pdu[3] = {PROTOCOL_VERSION, 1, DISCOVER_WIFI};
 	uint16_t crc = calculateCrc16(pdu, 3);
 	printf("crc calculated for message is 0x%04X\n", crc);
-	uint8_t rawMessage[] = {0xFE, 1, 1, DISCOVER_WIFI, (uint8_t) (crc >> 8), (uint8_t) (crc & 0x00FF), 0xFF};
+	uint8_t rawMessage[] = {0xFE, PROTOCOL_VERSION, 1, DISCOVER_WIFI, (uint8_t) (crc >> 8), (uint8_t) (crc & 0x00FF), 0xFF};
 	uint8_t *stuffedMessage;
 	uint8_t *cleanMessage;
 
@@ -382,36 +382,65 @@ void testProtocol(glbCtx_t ctx) {
 
 void testNetwork(glbCtx_t ctx) {
 	printf("Enter in %s\n", __FUNCTION__);
-	uint8_t pdu[3] = {1, 1, GET_NETWORK};
-	uint16_t crc = calculateCrc16(pdu, 3);
-	printf("crc calculated for message is 0x%04X\n", crc);
-	uint8_t rawMessage[] = {0xFE, 1, 1, GET_NETWORK, (uint8_t) (crc >> 8), (uint8_t) (crc & 0x00FF), 0xFF};
-	uint8_t *stuffedMessage;
-	uint8_t *cleanMessage;
+	/* Test get network from ETH0 */
+	{
+		uint8_t pdu[4] = {PROTOCOL_VERSION, 2, GET_NETWORK, NETWORK_LAN};
+		uint16_t crc = calculateCrc16(pdu, 4);
+		printf("crc calculated for message is 0x%04X\n", crc);
+		uint8_t rawMessage[] = {0xFE, PROTOCOL_VERSION, 2, GET_NETWORK, NETWORK_LAN, (uint8_t) (crc >> 8), (uint8_t) (crc & 0x00FF), 0xFF};
+		uint8_t *stuffedMessage;
+		uint8_t *cleanMessage;
 
-	printf("Raw get network");// rawMessage and clean/unstuffed Message should be the same
-	printMessage(rawMessage, 7);// Displays the FF
-	printf("Stuffed ");// Message as it should be receive from client
-	stuffedMessage = byteStuffRawFrame(rawMessage, 7);
-	int stuffedSz = getStuffedMessageLength(stuffedMessage, 7);
-	//	printf("Stuffed message size is %d\n", stuffedSz);
-	printMessage(stuffedMessage, stuffedSz);
-	printf("Unstuffed ");// Message as it should be processed in embed
-	cleanMessage = unbyteStuffFrame(stuffedMessage);
-	printMessage(cleanMessage, 7);
+		printf("Raw get network");// rawMessage and clean/unstuffed Message should be the same
+		printMessage(rawMessage, 8);// Displays the FF
+		printf("Stuffed ");// Message as it should be receive from client
+		stuffedMessage = byteStuffRawFrame(rawMessage, 8);
+		int stuffedSz = getStuffedMessageLength(stuffedMessage, 8);
+		//	printf("Stuffed message size is %d\n", stuffedSz);
+		printMessage(stuffedMessage, stuffedSz);
+		printf("Unstuffed ");// Message as it should be processed in embed
+		cleanMessage = unbyteStuffFrame(stuffedMessage);
+		printMessage(cleanMessage, 8);
 
-	printf("************************************************\n");
+		printf("************************************************\n");
 
-	//	printf("Message is %s\n", message);
-	printf("1st\n");
-	deserializeAndProcessCmd(ctx, stuffedMessage);
+		//	printf("Message is %s\n", message);
+		printf("1st\n");
+		deserializeAndProcessCmd(ctx, stuffedMessage);
+		printf("Clean tabs\n");
+		if(stuffedMessage) free(stuffedMessage);
+		if(cleanMessage) free(cleanMessage);
+	}
+	/* Test get network from WLAN0 */
 	printf("------------------------------------------------\n");
-	printf("2nd\n");
-	deserializeAndProcessCmd(ctx, stuffedMessage);
+	{
+		uint8_t pdu[4] = {PROTOCOL_VERSION, 2, GET_NETWORK, NETWORK_WIFI};
+		uint16_t crc = calculateCrc16(pdu, 4);
+		printf("crc calculated for message is 0x%04X\n", crc);
+		uint8_t rawMessage[] = {0xFE, PROTOCOL_VERSION, 2, GET_NETWORK, NETWORK_WIFI, (uint8_t) (crc >> 8), (uint8_t) (crc & 0x00FF), 0xFF};
+		uint8_t *stuffedMessage;
+		uint8_t *cleanMessage;
+
+		printf("Raw get network");// rawMessage and clean/unstuffed Message should be the same
+		printMessage(rawMessage, 8);// Displays the FF
+		printf("Stuffed ");// Message as it should be receive from client
+		stuffedMessage = byteStuffRawFrame(rawMessage, 8);
+		int stuffedSz = getStuffedMessageLength(stuffedMessage, 8);
+		//	printf("Stuffed message size is %d\n", stuffedSz);
+		printMessage(stuffedMessage, stuffedSz);
+		printf("Unstuffed ");// Message as it should be processed in embed
+		cleanMessage = unbyteStuffFrame(stuffedMessage);
+		printMessage(cleanMessage, 8);
+
+		printf("************************************************\n");
+		printf("2nd\n");
+		deserializeAndProcessCmd(ctx, stuffedMessage);
+		printf("Clean tabs\n");
+		if(stuffedMessage) free(stuffedMessage);
+		if(cleanMessage) free(cleanMessage);
+	}
 
 	printf("Clean context\n");
-	if(stuffedMessage) free(stuffedMessage);
-	if(cleanMessage) free(cleanMessage);
 	destroyContext(ctx);
 }
 

@@ -156,6 +156,7 @@ int main(int argc, char **argv) {
 //	simpleScan();// For the fun
 //	rfcommServer();
 //	return initAndTalkWithBTDevice();
+	// TODO BDY: run program as root
 
 	// Tests
 	if(argc == 2) {

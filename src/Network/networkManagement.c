@@ -51,8 +51,20 @@ int readIPAddresses(stArgs_t args)
 	int ret = EXIT_SUCCESS;
 	struct ifreq ifr;
 	networkConf_t conf = NULL;
-	char *ifname = ifnames[0];
+	char *ifname;
+	printf("Enter in %s\n", __FUNCTION__);
+	conf = calloc(1, sizeof(networkConf));
+	// Extract the configuration asked: NETWORK_LAN or NETWORK_WIFI
+	switch(PROTOCOL_VERSION) {
+	case 1:
+		conf->isWifi = args->input[4];
+		break;
+	default:
+		fprintf(stderr, "Unvalid protocol\n");
+		return EXIT_FAILURE;
+	};
 
+	ifname = conf->isWifi ? ifnames[0] : ifnames[1];
 
 	fd = socket(AF_INET, SOCK_DGRAM, 0);
 	if (fd < 0) {
@@ -62,30 +74,16 @@ int readIPAddresses(stArgs_t args)
 	ifr.ifr_addr.sa_family = AF_INET;
 	strncpy(ifr.ifr_name, ifname, IFNAMSIZ-1);
 
-	conf = calloc(1, sizeof(networkConf));
-
 	// Address
 	int rc = ioctl(fd, SIOCGIFADDR, &ifr);
-	if(rc >= 0) {// WiFi found
-		conf->isWifi = TRUE;
-		printf("Get IP from %s\n", ifname);
-		rc = readWifi(conf, ifname);
-	}
 	if(rc < 0) {
 		fprintf(stderr, "Failed to get IP address for %s: %d::%s. Try with %s.\n", ifname, errno, strerror(errno), ifnames[1]);
-		// Failed on WLAN => try now on LAN
-		ifname = ifnames[1];
-		conf->isWifi = FALSE;
-		strncpy(ifr.ifr_name, ifname, IFNAMSIZ-1);
-		if(ioctl(fd, SIOCGIFADDR, &ifr) < 0) {
-			fprintf(stderr, "Failed to get IP address for %s: %d::%s\n", ifname, errno, strerror(errno));
-			ret = EXIT_FAILURE;
-			goto CleanAll;
-		}
+		ret = EXIT_FAILURE;
+		goto CleanAll;
 	}
 	strncpy(conf->address, inet_ntoa(((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr), IFNAMSIZ - 1);
 
-    // Netmask
+	// Netmask
     if(ioctl(fd, SIOCGIFNETMASK, &ifr) < 0) {
     	fprintf(stderr, "Failed to get netmask: %d::%s\n", errno, strerror(errno));
     	ret = EXIT_FAILURE;
@@ -97,7 +95,7 @@ int readIPAddresses(stArgs_t args)
     readGateways(conf, ifname);
 
     // DHCP / Static
-    readStaticDhcp(conf, ifname);
+    readStaticDhcp(conf, ifname);// TODO BDY: manual for wifi, neither static nor dhcp
 
     // DNS
     readDns(conf);
@@ -202,7 +200,7 @@ static int readStaticDhcp(networkConf_t conf, char *ifname) {
 			conf->isDhcp = TRUE;
 		}
 		else {
-			fprintf(stderr, "Error, %s is neithor static nor dhcp\n", ifname);
+			fprintf(stderr, "Error, %s is neither static nor dhcp\n", ifname);
 			pclose(fp);
 			return EXIT_FAILURE;
 		}
