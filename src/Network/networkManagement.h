@@ -39,6 +39,7 @@ typedef struct networkConf {
 	char essid[IW_ESSID_MAX_SIZE];
 } networkConf, *networkConf_t;
 
-extern int readIPAddresses(stArgs_t args);
+extern int readNetworkInfo(stArgs_t args);
+extern int ping(char* target);
 
 #endif /* NETWORK_NETWORKMANAGEMENT_H_ */

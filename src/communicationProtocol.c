@@ -56,6 +56,7 @@
 
 #include "constants.h"
 #include "Network/wifiTools.h"
+#include "Network/networkManagement.h"
 #include "communicationProtocol.h"
 
 /* Communication */
@@ -442,6 +443,10 @@ void testNetwork(glbCtx_t ctx) {
 
 	printf("Clean context\n");
 	destroyContext(ctx);
+}
+
+void testPing(char *ip) {
+	ping(ip);
 }
 
 //int main(int argc, char **argv) {

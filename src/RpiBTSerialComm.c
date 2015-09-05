@@ -40,14 +40,14 @@
 #define FUNC(X) {.commMethods = X}
 
 static int testRpi(glbCtx_t ctx, int argc, char **argv);
-// TODO BDY: makefile.am with subfolder
+// BDY: makefile.am with subfolder => no, only valid if there are other target to build
 
 //static int (*commMethods[]) (stArgs_t args) = { scanWifi };
 static stCommFunc commFuncs[] = {// See constants.h => define lines to know the order of the functions
 //	{.commMethods = scanWifi},
 	FUNC(scanWifi),// Discover WiFi, ID = 0
 	FUNC(stopPairing),// Stop bluetooth pairing, ID = 1
-	FUNC(readIPAddresses),// Get network status
+	FUNC(readNetworkInfo),// Get network status
 	{ NULL }
 };
 int running;
@@ -109,6 +109,10 @@ static int testRpi(glbCtx_t ctx, int argc, char **argv) {
 		printf("Get Network\n");
 		testNetwork(ctx);
 	}
+	else if(strstr(argv[1], "TestPing") != NULL) {
+		printf("Test ping %s\n", argv[2]);
+		testPing(argv[2]);
+	}
 	return EXIT_SUCCESS;
 }
 
@@ -159,7 +163,7 @@ int main(int argc, char **argv) {
 	// TODO BDY: run program as root
 
 	// Tests
-	if(argc == 2) {
+	if(argc >= 2) {
 		return testRpi(ctx, argc, argv);
 	}
 	// End of tests
