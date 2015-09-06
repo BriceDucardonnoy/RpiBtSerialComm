@@ -188,6 +188,5 @@ int main(int argc, char **argv) {
 	return EXIT_SUCCESS;
 }
 
-// TODO BDY: monitor signals for scan pairing
-// TODO BDY: test with Valgrind
+// TODO BDY: monitor signals for scan pairing & test with Valgrind
 

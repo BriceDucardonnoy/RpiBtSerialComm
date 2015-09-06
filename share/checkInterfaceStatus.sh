@@ -4,7 +4,6 @@
 declare -a networks=('www.google.com' '8.8.8.8' 'Gateway' 'DNS');
 declare -a retcodes=(0 1 2 2);
 counter=0
-result=-1
 
 # Functions
 getGateway() {
@@ -20,6 +19,7 @@ pingInterface() {
 # ping method returns
 #	0: ping ok
 #	2: Network is unreachable or unknown host
+	local result=-1
 	if [ $# -ne 3 ]; then
 		echo "3 parameters are expected"
 		return -1
@@ -28,7 +28,8 @@ pingInterface() {
 	echo "Try to join $2 from $1"
 	ping -c 1 -I $1 $2
 	if [ $? -eq 0 ]; then
-		return $3
+		echo "Success!"
+		result=$3
 	else
 		echo "Failure!"
 		counter=`expr $counter + 1`
@@ -37,9 +38,9 @@ pingInterface() {
 		else
 			result=-1
 		fi
-		return $result
 	fi
-	return 0
+	echo "Return $result"
+	return $result
 }
 
 # Start main part
@@ -48,7 +49,6 @@ pingInterface() {
 #	0	www.google.com pingable	-> all is good
 #	1	8.8.8.8 pingable 		-> probably DNS problem
 #	2	Gateway or DNS 			-> internal network reachable, probably not opened to the extern world
-
 if [ $# -ne 1 ]; then
 	echo "Usage $0 <ETH0|eth0|WLAN0|wlan0>"
 	exit -1
@@ -56,17 +56,30 @@ fi
 
 case "$1" in 
 	ETH0|eth0)
-		result= echo `pingInterface eth0 ${networks[$counter]} ${retcodes[$counter]}`
-		exit $result
+		interface="eth0"
 		;;
 	WLAN0|wlan0)
-		result= echo `pingInterface "wlan0" ${networks[$counter]} ${retcodes[$counter]}`
-		exit $result
+		interface="wlan0"
 		;;
 	*)
 		exit -1
 		;;
 esac
-# TODO BDY: write result in a file
+
+while true; do
+#	retcode= echo `pingInterface $interface ${networks[$counter]} ${retcodes[$counter]}`
+#	retcode=$(pingInterface $interface ${networks[$counter]} ${retcodes[$counter]})
+	pingInterface $interface ${networks[$counter]} ${retcodes[$counter]}
+	retcode=$?
+	echo "Will write $retcode"
+	if [ $retcode -eq 255 ]; then
+		retcode=-1
+	fi
+	echo "Will write $retcode"
+	echo $retcode > /tmp/${interface}Status
+	sleep 1
+done
+
+# TODO BDY: replace eth1 per eth0
 exit 0
 
