@@ -160,7 +160,7 @@ int main(int argc, char **argv) {
 //	simpleScan();// For the fun
 //	rfcommServer();
 //	return initAndTalkWithBTDevice();
-	// TODO BDY: run program as root
+	// TODO BDY: run program as root by chown root the binary or root uuid?
 
 	// Tests
 	if(argc >= 2) {
