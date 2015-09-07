@@ -6,10 +6,17 @@ declare -a retcodes=(0 1 2 2);
 counter=0
 
 # Functions
+# Usage: getGateway <interface>
 getGateway() {
-return ;
+	gw=`route -n | grep ${1} | grep UG | awk -F ' ' '{print $2}'`
+	if [ ${#gw} -gt 0 ]; then
+		echo "Not empty: <$gw>"
+		networks[2]=$gw
+	fi
+#	route -n | grep eth0 | grep UG | awk -F ' ' '{print $2}'
 }
 
+# Usage: getDNS <interface>
 getDNS() {
 return ;
 }
@@ -54,6 +61,8 @@ if [ $# -ne 1 ]; then
 	exit -1
 fi
 
+#gw=$(getGateway eth1)
+
 case "$1" in 
 	ETH0|eth0)
 		interface="eth0"
@@ -69,6 +78,7 @@ esac
 while true; do
 #	retcode= echo `pingInterface $interface ${networks[$counter]} ${retcodes[$counter]}`
 #	retcode=$(pingInterface $interface ${networks[$counter]} ${retcodes[$counter]})
+	getGateway $interface
 	pingInterface $interface ${networks[$counter]} ${retcodes[$counter]}
 	retcode=$?
 	echo "Will write $retcode"
