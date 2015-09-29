@@ -213,7 +213,7 @@ static int readStaticDhcp(networkConf_t conf, char *ifname) {
 	return EXIT_SUCCESS;
 }
 
-static int readDns(networkConf_t conf) {
+static int readDns(networkConf_t conf) {// FIXME BDY: check in /etc/network/interfaces
 	FILE *dnsFd;
 	char dns[128];
 	char *p;

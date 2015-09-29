@@ -18,7 +18,22 @@ getGateway() {
 
 # Usage: getDNS <interface>
 getDNS() {
-return ;
+## Get text between eth0:3 and the next iface instance
+#sed -ne '/^iface eth0:3 inet/{s///; :a' -e 'n;p;ba' -e '}' /etc/network/interfaces | sed '/^iface/q'
+
+## Get the DNS servers configured
+#grep dns-nameservers /etc/network/interfaces | awk -F ' ' '{printf "%s ", $1; printf "%s ", $2; printf "%s\n", $3}' | grep -v ^#
+
+## Get the DNS servers for the interface eth0
+#sed -ne '/^iface eth0 inet/{s///; :a' -e 'n;p;ba' -e '}' /etc/network/interfaces | sed '/^iface/q' | grep dns-nameservers | awk -F ' ' '{printf "%s ", $1; printf "%s ", $2; printf "%s\n", $3}' | grep -v ^#
+
+## Get the 1st DNS server for the interface eth0
+#sed -ne '/^iface eth0 inet/{s///; :a' -e 'n;p;ba' -e '}' /etc/network/interfaces | sed '/^iface/q' | grep dns-nameservers | awk -F ' ' '{printf "%s ", $1; printf "%s ", $2; printf "%s\n", $3}' | grep -v ^# | awk -F ' ' '{print $2}'
+	dns=`sed -ne '/^iface '${1}' inet/{s///; :a' -e 'n;p;ba' -e '}' /etc/network/interfaces | sed '/^iface/q' | grep dns-nameservers | awk -F ' ' '{printf "%s ", $1; printf "%s ", $2; printf "%s\n", $3}' | grep -v ^# | awk -F ' ' '{print $2}'`
+	if [ ${#dns} -gt 0 ]; then
+		echo "DNS to test is $dns"
+		network[3]=$dns
+	fi
 }
 
 pingInterface() {
@@ -62,6 +77,7 @@ if [ $# -ne 1 ]; then
 fi
 
 #gw=$(getGateway eth1)
+#getDNS $1
 
 case "$1" in 
 	ETH0|eth0)
@@ -79,6 +95,8 @@ while true; do
 #	retcode= echo `pingInterface $interface ${networks[$counter]} ${retcodes[$counter]}`
 #	retcode=$(pingInterface $interface ${networks[$counter]} ${retcodes[$counter]})
 	getGateway $interface
+	getDNS $interface
+
 	pingInterface $interface ${networks[$counter]} ${retcodes[$counter]}
 	retcode=$?
 	echo "Will write $retcode"
