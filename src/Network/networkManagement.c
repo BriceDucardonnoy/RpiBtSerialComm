@@ -31,7 +31,9 @@
 #include <linux/sockios.h>
 #include <errno.h>
 #include <unistd.h>
+#include <stdio.h>
 #include <string.h>
+#include <stdbool.h>
 #include <arpa/inet.h>
 #include <sys/param.h>
 
@@ -213,24 +215,56 @@ static int readStaticDhcp(networkConf_t conf, char *ifname) {
 	return EXIT_SUCCESS;
 }
 
-static int readDns(networkConf_t conf) {// FIXME BDY: check in /etc/network/interfaces
+static int readDns(networkConf_t conf) {
 	FILE *dnsFd;
 	char dns[128];
 	char *p;
 	int dnsIdx = 0;
+	int ifaceSz = conf->isWifi ? strlen("iface wlanX inet") : strlen("iface ethX inet");
+	char *ethToFind 	= calloc(1, ifaceSz + 1);
+	bool bEthFound = FALSE;// Set to true if /etc/resolv.conf is used
+	const char *dnsKeyWord	= "dns-nameservers\0";
+	const char *dnsFileInfo = "/etc/network/interfaces";
+//	const char *dnsFileInfo = "/etc/resolv.conf";// Set bEthFound to true if /etc/resolv.conf is used
+//	const char *dnsKeyWord	= "nameserver\0";
+	snprintf(ethToFind, ifaceSz, "iface %s inet ", conf->isWifi ? ifnames[0] : ifnames[1]);
+	printf("%s:: Look for <%s> keyword into %s\n", __FUNCTION__, dnsKeyWord, dnsFileInfo);
 
-	dnsFd = fopen("/etc/resolv.conf", "r");
+	dnsFd = fopen(dnsFileInfo, "r");
 	if (!dnsFd) {
-		fprintf(stderr, "Fail to open /etc/resolv.conf: %d::%s\n", errno, strerror(errno));
+		fprintf(stderr, "Fail to open %s: %d::%s\n", dnsFileInfo, errno, strerror(errno));
+		free(ethToFind);
 		return EXIT_FAILURE;
 	}
 
 	while (fgets(dns, 128, dnsFd)) {
 		if(dnsIdx >= 2) break;
-		if (strncmp(dns, "nameserver", 10) == 0) {
+		printf("%s:: Line is <%s>\n", __FUNCTION__, dns);
+		p = dns;
+		// Shift the pointer until we reach a non-space character
+		while(isspace(*p) && *p != '\0') {
+			p++;
+		}
+		/*
+		 * Part necessary if we check into /etc/network/interfaces
+		 */
+		if(strncmp(p, ethToFind, strlen(ethToFind)) == 0) {
+			printf("%s:: FOUND\n", __FUNCTION__);
+			bEthFound = TRUE;
+		}
+		else if(bEthFound == TRUE && strncmp(p, "iface ", 6) == 0) {
+			// We already have parsed all the relevant part. Now we can leave the loop
+			printf("%s:: We are done now\n", __FUNCTION__);
+			break;
+		}
+		/*
+		 * End of specific part
+		 */
+		if (bEthFound == TRUE && strncmp(p, dnsKeyWord, strlen(dnsKeyWord)) == 0) {
 //			printf("read <%s>\n", dns);
-			p = &dns[11];
-			while (*p == ' ' || *p == '\t') {
+//			p = &dns[11];
+			p += strlen(dnsKeyWord) + 1;
+			while (*p == ' ' || *p == '\t') {// <=> to isspace()
 				p++;
 			}
 			if(*p) {
@@ -273,6 +307,7 @@ static int readDns(networkConf_t conf) {// FIXME BDY: check in /etc/network/inte
 	}
 
 	fclose(dnsFd);
+	free(ethToFind);
 	return EXIT_SUCCESS;
 }
 

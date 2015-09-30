@@ -441,7 +441,7 @@ void testNetwork(glbCtx_t ctx) {
 		if(cleanMessage) free(cleanMessage);
 	}
 
-	printf("Clean context\n");
+	printf("---------------------------------------------\nClean context\n");
 	destroyContext(ctx);
 }
 

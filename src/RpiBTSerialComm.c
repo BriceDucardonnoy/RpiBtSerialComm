@@ -187,6 +187,6 @@ int main(int argc, char **argv) {
 	destroyContext(ctx);
 	return EXIT_SUCCESS;
 }
-
+// FIXME BDY: *** Pas de règle pour fabriquer la cible « checkNetworkStatusd », nécessaire pour « all-am ». Arrêt.
 // TODO BDY: monitor signals for scan pairing & test with Valgrind
 
