@@ -228,7 +228,7 @@ static int readDns(networkConf_t conf) {
 //	const char *dnsFileInfo = "/etc/resolv.conf";// Set bEthFound to true if /etc/resolv.conf is used
 //	const char *dnsKeyWord	= "nameserver\0";
 	snprintf(ethToFind, ifaceSz, "iface %s inet ", conf->isWifi ? ifnames[0] : ifnames[1]);
-	printf("%s:: Look for <%s> keyword into %s\n", __FUNCTION__, dnsKeyWord, dnsFileInfo);
+	printf("%s:: Look for <%s>...<%s> into %s\n", __FUNCTION__, dnsKeyWord, ethToFind, dnsFileInfo);
 
 	dnsFd = fopen(dnsFileInfo, "r");
 	if (!dnsFd) {
@@ -239,7 +239,7 @@ static int readDns(networkConf_t conf) {
 
 	while (fgets(dns, 128, dnsFd)) {
 		if(dnsIdx >= 2) break;
-		printf("%s:: Line is <%s>\n", __FUNCTION__, dns);
+//		printf("%s:: Line is <%s>\n", __FUNCTION__, dns);
 		p = dns;
 		// Shift the pointer until we reach a non-space character
 		while(isspace(*p) && *p != '\0') {
@@ -249,12 +249,12 @@ static int readDns(networkConf_t conf) {
 		 * Part necessary if we check into /etc/network/interfaces
 		 */
 		if(strncmp(p, ethToFind, strlen(ethToFind)) == 0) {
-			printf("%s:: FOUND\n", __FUNCTION__);
+//			printf("%s:: FOUND\n", __FUNCTION__);
 			bEthFound = TRUE;
 		}
 		else if(bEthFound == TRUE && strncmp(p, "iface ", 6) == 0) {
 			// We already have parsed all the relevant part. Now we can leave the loop
-			printf("%s:: We are done now\n", __FUNCTION__);
+//			printf("%s:: We are done now\n", __FUNCTION__);
 			break;
 		}
 		/*
