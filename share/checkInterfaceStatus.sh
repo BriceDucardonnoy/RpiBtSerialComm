@@ -41,14 +41,14 @@ pingInterface() {
 # ping method returns
 #	0: ping ok
 #	2: Network is unreachable or unknown host
-	local result=-1
+	local result=255
 	if [ $# -ne 3 ]; then
 		echo "3 parameters are expected"
-		return -1
+		return 255
 	fi
 
 	echo "Try to join $2 from $1"
-	ping -c 1 -I $1 $2
+	ping -c 1 -I $1 $2 &> /dev/null
 	if [ $? -eq 0 ]; then
 		echo "Success!"
 		result=$3
@@ -58,7 +58,7 @@ pingInterface() {
 		if [ $counter -lt ${#networks[@]} ]; then
 			result= echo `pingInterface $1 ${networks[$counter]} ${retcodes[$counter]}`
 		else
-			result=-1
+			result=255
 		fi
 	fi
 	echo "Return $result"
