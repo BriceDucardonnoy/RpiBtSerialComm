@@ -105,9 +105,8 @@ while true; do
 	fi
 	echo "Will write $retcode"
 	echo $retcode > /tmp/${interface}Status
-	sleep 1
+	sleep 5
 done
 
-# TODO BDY: replace eth1 per eth0
 exit 0
 

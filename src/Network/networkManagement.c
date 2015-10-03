@@ -213,7 +213,7 @@ static int readStaticDhcp(networkConf_t conf, char *ifname) {
 	}
 	pclose(fp);
 	return EXIT_SUCCESS;
-}
+}// FIXME BDY: don't run checkInterface into /etc/rc2, run a script calling checkInterface for eth0 and wlan0 and create the KS01... for the stop in switch case
 
 static int readDns(networkConf_t conf) {
 	FILE *dnsFd;

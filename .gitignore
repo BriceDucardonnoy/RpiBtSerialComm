@@ -2,7 +2,7 @@
 /autom4te.cache/
 Makefile.in
 /install/
-*~
+**~
 **Makefile.in
 **.deps/
 **.o

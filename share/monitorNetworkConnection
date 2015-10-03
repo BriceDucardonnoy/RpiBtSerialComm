@@ -1,0 +1,54 @@
+#!/bin/bash
+### BEGIN INIT INFO
+# Provides:          Monitoring of 1st LAN and WiFi network connectivity
+# Required-Start:    $local_fs $network
+# Required-Stop:     $local_fs
+# Default-Start:     2
+# Default-Stop:      0 6
+# Short-Description: Raise network interfaces.
+# Description:       Launch a monitoring script per network interface which test the connectivity by trying ping google, 8.8.8.8, gateway or DNS 
+### END INIT INFO
+
+CHECK_PATH="/etc/init.d"
+CHECK_SCRIPT="checkInterfaceStatus.sh"
+COMMAND="$CHECK_PATH/$CHECK_SCRIPT"
+
+PATH=/sbin:/bin:/usr/sbin:/usr/bin
+DAEMON=/usr/sbin/monitorNetworkConnectiond
+PIDFILE=/var/run/monitorNetworkConnection.pid
+
+start() {
+	$COMMAND "eth0" &> /dev/null &
+	$COMMAND "wlan0" &> /dev/null &
+}
+
+stop() {
+	killall -9 $CHECK_SCRIPT
+}
+
+
+if [ $# -ne 1 ]; then
+	echo "Usage $0 <start|stop|restart>"
+	exit -1
+fi
+
+[ -x /etc/init.d/checkInterfaceStatus.sh ] || exit 1
+
+case "$1" in 
+	start)
+		start
+		;;
+	stop)
+		stop
+		;;
+	restart)
+		stop
+		start
+		;;
+	*)
+		exit -1
+		;;
+esac
+
+exit 0
+
