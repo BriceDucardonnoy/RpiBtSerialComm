@@ -40,6 +40,6 @@ typedef struct networkConf {
 } networkConf, *networkConf_t;
 
 extern int readNetworkInfo(stArgs_t args);
-extern int ping(char* target);
+extern int readNetworkStatus(stArgs_t args);
 
 #endif /* NETWORK_NETWORKMANAGEMENT_H_ */

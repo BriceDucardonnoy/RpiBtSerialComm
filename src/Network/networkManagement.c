@@ -27,7 +27,6 @@
 
 #include <net/if.h>
 #include <net/route.h>
-#include <netinet/ip_icmp.h>
 #include <linux/sockios.h>
 #include <errno.h>
 #include <unistd.h>
@@ -35,7 +34,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include <arpa/inet.h>
-#include <sys/param.h>
+#include <sys/inotify.h>
 
 #include "../RpiBTSerialComm.h"
 #include "networkManagement.h"
@@ -46,9 +45,27 @@ static int readWifi(networkConf_t conf, char *ifname);
 static int readGateways(networkConf_t conf, char *devname);
 static int readStaticDhcp(networkConf_t conf, char *ifname);
 static int readDns(networkConf_t conf);
-static uint16_t in_cksum(uint16_t *addr, unsigned len);
 
-static char *ifnames[2] = {"wlan0", "eth0"};
+static int cnNbMonitoredInterfaces = 2;
+static char *ifnames[] = {"wlan0", "eth0"};
+// TODO BDY: write doc when updateStatus done
+
+/*!
+ * \brief Put in the output args the status of ETH0 and WLAN0 connectivity
+ *
+ * Put in the output args the status of ETH0 and WLAN0 connectivity.
+ * This is get from the checkInterfaceStatus.sh bash script
+ * Connectivity status per interface is:
+ * -1	no network or update about the status available (script was launched with wrong arguments)
+ * 0	www.google.com is reachable
+ * 1	8.8.8.8 is reachable. Probably DNS server not configured or not reachable
+ * 2	gateway or DNS reachable. Is the unit on a private network?
+ *
+ * \return EXIT_SUCCESS or EXIT_FAILURE
+ */
+int readNetworkStatus(stArgs_t args) {
+	// Map in SHM?
+}
 
 int readNetworkInfo(stArgs_t args)
 {
@@ -213,20 +230,24 @@ static int readStaticDhcp(networkConf_t conf, char *ifname) {
 	}
 	pclose(fp);
 	return EXIT_SUCCESS;
-}// FIXME BDY: don't run checkInterface into /etc/rc2, run a script calling checkInterface for eth0 and wlan0 and create the KS01... for the stop in switch case
+}
 
 static int readDns(networkConf_t conf) {
 	FILE *dnsFd;
 	char dns[128];
 	char *p;
-	int dnsIdx = 0;
-	int ifaceSz = conf->isWifi ? strlen("iface wlanX inet") : strlen("iface ethX inet");
-	char *ethToFind 	= calloc(1, ifaceSz + 1);
-	bool bEthFound = FALSE;// Set to true if /etc/resolv.conf is used
+	int dnsIdx 				= 0;
+	int ifaceSz 			= conf->isWifi ? strlen("iface wlanX inet") : strlen("iface ethX inet");
+	char *ethToFind 		= calloc(1, ifaceSz + 1);
+	bool bEthFound 			= FALSE;// Set to true if /etc/resolv.conf is used
 	const char *dnsKeyWord	= "dns-nameservers\0";
 	const char *dnsFileInfo = "/etc/network/interfaces";
 //	const char *dnsFileInfo = "/etc/resolv.conf";// Set bEthFound to true if /etc/resolv.conf is used
 //	const char *dnsKeyWord	= "nameserver\0";
+	if(ethToFind == NULL) {
+		perror("Can't allocate memory to read DNS");
+		return EXIT_FAILURE;
+	}
 	snprintf(ethToFind, ifaceSz, "iface %s inet ", conf->isWifi ? ifnames[0] : ifnames[1]);
 	printf("%s:: Look for <%s>...<%s> into %s\n", __FUNCTION__, dnsKeyWord, ethToFind, dnsFileInfo);
 
@@ -327,163 +348,53 @@ static void printData(networkConf conf) {
 			conf.isDhcp == FALSE ? "Static" : "DHCP");
 }
 
-/*
- * Copy / past from a post in http://www.linuxforums.org
+/*!
+ * \brief Thread listening for network status update
+ * Thread listening for network status update with iNotify system.
+ * Files updated are <interface name>Status located in /tmp.
+ * Eg. eth0Status and wlan0Status
+ *
+ * \return EXIT_SUCCESS or EXIT_ABORT if inotify system failed to initialize
  */
-#define	DEFDATALEN	(64-ICMP_MINLEN)	/* default data length */
-#define	MAXIPLEN	60
-#define	MAXICMPLEN	76
-#define	MAXPACKET	(65536 - 60 - ICMP_MINLEN)/* max packet size */
-int ping(char* target) {
-	int s, i, cc, packlen, datalen = DEFDATALEN;
-	int ret, fromlen, hlen;
-	int retval;
-	int /*start_t, */end_t;
-	int cont = TRUE;
-	u_char *packet, outpack[MAXPACKET];
-	char hnamebuf[MAXHOSTNAMELEN];
-	char *hostname;
-	fd_set rfds;
-	struct hostent *hp;
-	struct sockaddr_in to, from;
-	struct icmp *icp;
-	struct timeval tv;
-	struct timeval start, end;
+int listenNetworkConnectivity(glbCtx_t ctx) {
+	int idx;
+	int inotifyFd;
+	int wds[cnNbMonitoredInterfaces];
+	char *interfacePath;
+	size_t bufferLength = sizeof(struct inotify_event) + 12;// Biggest interfaces name + status won't be bigger than 11 bytes
+	ssize_t readNb;
+	char buffer[bufferLength];
 
-	to.sin_family = AF_INET;
-
-	// try to convert as dotted decimal address, else if that fails assume it's a hostname
-	to.sin_addr.s_addr = inet_addr(target);
-	if (to.sin_addr.s_addr != (u_int) -1)
-		hostname = target;
-	else {
-		hp = gethostbyname(target);
-		if (!hp) {
-			fprintf(stderr,"Unknown host %s\n", target);
-			return -1;
+	// Init
+	inotifyFd = inotify_init();
+	if(inotifyFd == -1) {
+		fprintf(stderr, "Failed to init inotify: %d::%s\n", errno, strerror(errno));
+		return EXIT_ABORT;
+	}
+	// Add watch
+	for(idx = 0 ; idx < cnNbMonitoredInterfaces ; idx++) {
+		interfacePath = calloc(1, strlen(ifnames[idx]) + 6);// + 6 <=> 'Status' string length
+		if(interfacePath == NULL) {
+			perror("Can't allocate memory");
+			continue;
 		}
-		to.sin_family = hp->h_addrtype;
-		bcopy(hp->h_addr, (caddr_t)&to.sin_addr, hp->h_length);
-		strncpy(hnamebuf, hp->h_name, sizeof(hnamebuf) - 1);
-		hostname = hnamebuf;
-	}
-	packlen = datalen + MAXIPLEN + MAXICMPLEN;
-	if ((packet = (u_char *) malloc((u_int) packlen)) == NULL) {
-		fprintf(stderr, "malloc error\n");
-		return -1;
-	}
-
-	if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP)) < 0) {
-		perror("socket"); /* probably not running as superuser */
-		return -1;
-	}
-
-	icp = (struct icmp *) outpack;
-	icp->icmp_type = ICMP_ECHO;
-	icp->icmp_code = 0;
-	icp->icmp_cksum = 0;
-	icp->icmp_seq = 12345; /* seq and id must be reflected */
-	icp->icmp_id = getpid();
-
-	cc = datalen + ICMP_MINLEN;
-	icp->icmp_cksum = in_cksum((unsigned short *) icp, cc);
-
-	gettimeofday(&start, NULL);
-
-	i = sendto(s, (char *) outpack, cc, 0, (struct sockaddr*) &to, (socklen_t) sizeof(struct sockaddr_in));
-	if (i < 0 || i != cc) {
-		if (i < 0) {
-			perror("sendto error");
+		snprintf(interfacePath, strlen(ifnames[idx]) + 6, "%sStatus", ifnames[idx]);
+		wds[idx] = inotify_add_watch(inotifyFd, interfacePath, IN_CLOSE_WRITE);
+		if(wds[idx] == -1) {
+			fprintf(stderr, "Failed to add inotify watch to %s: %d::%s\n", interfacePath, errno, strerror(errno));
 		}
-		printf("Wrote %s %d chars, ret = %d\n", hostname, cc, i);
+		free(interfacePath);
 	}
-
-	// Watch stdin (fd 0) to see when it has input.
-	FD_ZERO(&rfds);
-	FD_SET(s, &rfds);
-	// Wait up to one seconds.
-	tv.tv_sec = 1;
-	tv.tv_usec = 0;
-
-	while (cont) {
-		retval = select(s + 1, &rfds, NULL, NULL, &tv);
-		if (retval == -1) {
-			perror("select()");
-			return -1;
-		} else if (retval) {
-			fromlen = sizeof(struct sockaddr_in);
-			if ((ret = recvfrom(s, (char *) packet, packlen, 0, (struct sockaddr *) &from, (socklen_t*) &fromlen)) < 0) {
-				perror("recvfrom error");
-				return -1;
-			}
-
-			// Check the IP header
-//			ip = (struct ip *) ((char*) packet);
-			hlen = sizeof(struct ip);
-			if (ret < (hlen + ICMP_MINLEN)) {
-				fprintf(stderr, "Packet too short (%d bytes) from %s\n", ret, hostname);
-				return -1;
-			}
-
-			// Now the ICMP part
-			icp = (struct icmp *) (packet + hlen);
-			if (icp->icmp_type == ICMP_ECHOREPLY) {
-				printf("Recv: echo reply\n");
-				if (icp->icmp_seq != 12345) {
-					printf("received sequence # %u\n", icp->icmp_seq);
-					continue;
-				}
-				if (icp->icmp_id != getpid()) {
-					printf("received id %d\n", icp->icmp_id);
-					continue;
-				}
-				cont = FALSE;
-			} else {
-				printf("Recv: not an echo reply\n");
-				continue;
-			}
-
-			gettimeofday(&end, NULL);
-			end_t = 1000000 * (end.tv_sec - start.tv_sec) + (end.tv_usec - start.tv_usec);
-
-			if (end_t < 1) {
-				end_t = 1;
-			}
-
-			printf("Elapsed time = %d usec\n", end_t);
-			return end_t;
-		} else {
-			printf("No data within one seconds.\n");
-			return 0;
+	// Listen
+	while(TRUE) {
+		readNb = read(inotifyFd, buffer, bufferLength);
+		if(readNb < 0) {
+			perror("Read");
 		}
 	}
-	return 0;
-}
 
-static uint16_t in_cksum(uint16_t *addr, unsigned len) {
-	uint16_t answer = 0;
-	/*
-	 * Our algorithm is simple, using a 32 bit accumulator (sum), we add
-	 * sequential 16 bit words to it, and at the end, fold back all the
-	 * carry bits from the top 16 bits into the lower 16 bits.
-	 */
-	uint32_t sum = 0;
-	while (len > 1) {
-		sum += *addr++;
-		len -= 2;
-	}
-
-	// mop up an odd byte, if necessary
-	if (len == 1) {
-		*(unsigned char *) &answer = *(unsigned char *) addr;
-		sum += answer;
-	}
-
-	// add back carry outs from top 16 bits to low 16 bits
-	sum = (sum >> 16) + (sum & 0xffff); // add high 16 to low 16
-	sum += (sum >> 16); // add carry
-	answer = ~sum; // truncate to 16 bits
-	return answer;
+	// Before close, remove watch
+	return EXIT_SUCCESS;
 }
 
 /*

@@ -33,8 +33,8 @@
 #include "constants.h"
 #include "RpiBTSerialComm.h"
 #include "bluetoothUtils.h"
-#include "Network/wifiTools.h"
 #include "communicationProtocol.h"
+#include "Network/wifiTools.h"
 #include "Network/networkManagement.h"
 
 #define FUNC(X) {.commMethods = X}
@@ -108,10 +108,6 @@ static int testRpi(glbCtx_t ctx, int argc, char **argv) {
 	else if(strstr(argv[1], "TestGetNetwork") != NULL) {
 		printf("Get Network\n");
 		testNetwork(ctx);
-	}
-	else if(strstr(argv[1], "TestPing") != NULL) {
-		printf("Test ping %s\n", argv[2]);
-		testPing(argv[2]);
 	}
 	return EXIT_SUCCESS;
 }
@@ -187,6 +183,5 @@ int main(int argc, char **argv) {
 	destroyContext(ctx);
 	return EXIT_SUCCESS;
 }
-// FIXME BDY: *** Pas de règle pour fabriquer la cible « checkNetworkStatusd », nécessaire pour « all-am ». Arrêt.
 // TODO BDY: monitor signals for scan pairing & test with Valgrind
 

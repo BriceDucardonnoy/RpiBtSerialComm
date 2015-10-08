@@ -445,10 +445,6 @@ void testNetwork(glbCtx_t ctx) {
 	destroyContext(ctx);
 }
 
-void testPing(char *ip) {
-	ping(ip);
-}
-
 //int main(int argc, char **argv) {
 //	printf("Start test of protocol\n");
 //	return EXIT_SUCCESS;
