@@ -1,1 +1,1 @@
-ls -l build-RPi/install/bin/ && scp build-RPi/install/bin/sewSerialComm pi@rpi:~
+ls -l --color build-RPi/install/bin/ && scp build-RPi/install/bin/sewSerialComm pi@rpi:~

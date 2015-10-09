@@ -41,5 +41,17 @@ typedef struct networkConf {
 
 extern int readNetworkInfo(stArgs_t args);
 extern int readNetworkStatus(stArgs_t args);
+/*!
+ * \brief Start a thread listening network connectivity status
+ *
+ * Start a thread listening network connectivity status
+ */
+extern void startInterfaceMonitoring(glbCtx_t ctx);
+/*!
+ * \brief Stop the thread listening network connectivity status
+ *
+ * Stop the thread listening network connectivity status
+ */
+extern void terminateMonitoring(glbCtx_t ctx);
 
 #endif /* NETWORK_NETWORKMANAGEMENT_H_ */

@@ -35,6 +35,8 @@
 #include <stdbool.h>
 #include <arpa/inet.h>
 #include <sys/inotify.h>
+#include <pthread.h>
+#include <fcntl.h>
 
 #include "../RpiBTSerialComm.h"
 #include "networkManagement.h"
@@ -46,7 +48,12 @@ static int readGateways(networkConf_t conf, char *devname);
 static int readStaticDhcp(networkConf_t conf, char *ifname);
 static int readDns(networkConf_t conf);
 
+static void * listenNetworkConnectivity(void *userData);
+static void printThreadJoinErrorText(int errCode);
+static int updateConnectivityStatus(glbCtx_t ctx, char *interface);
+
 static int cnNbMonitoredInterfaces = 2;
+static const int cnPathExtraLength = 12;// + 12 <=> '/tmp/' + 'Status' + '\0' string length
 static char *ifnames[] = {"wlan0", "eth0"};
 // TODO BDY: write doc when updateStatus done
 
@@ -65,6 +72,8 @@ static char *ifnames[] = {"wlan0", "eth0"};
  */
 int readNetworkStatus(stArgs_t args) {
 	// Map in SHM?
+	// TODO BDY: NYI readNetworkStatus
+	return EXIT_SUCCESS;
 }
 
 int readNetworkInfo(stArgs_t args)
@@ -349,6 +358,45 @@ static void printData(networkConf conf) {
 }
 
 /*!
+ * \brief Start a thread listening network connectivity status
+ *
+ * Start a thread listening network connectivity status
+ */
+void startInterfaceMonitoring(glbCtx_t ctx) {
+	ctx->monitorInterface = TRUE;
+	pthread_mutex_init(&ctx->monitorInterfaceMutex, NULL);
+	pthread_create(&ctx->monitorInterfaceThread, NULL, listenNetworkConnectivity, (void *) ctx);
+}
+
+/*!
+ * \brief Stop the thread listening network connectivity status
+ *
+ * Stop the thread listening network connectivity status
+ */
+void terminateMonitoring(glbCtx_t ctx) {
+	pthread_mutex_lock(&ctx->monitorInterfaceMutex);
+	ctx->monitorInterface = FALSE;
+	pthread_mutex_unlock(&ctx->monitorInterfaceMutex);
+	printThreadJoinErrorText(pthread_join(ctx->monitorInterfaceThread, NULL));
+	pthread_mutex_destroy(&ctx->monitorInterfaceMutex);
+}
+
+static void printThreadJoinErrorText(int errCode) {
+	switch(errCode) {
+	case 0: printf("Thread successfully joined.\n");
+		break;
+	case EDEADLK: fprintf(stderr, "A deadlock was detected or thread specifies the calling thread.\n");
+		break;
+	case EINVAL: fprintf(stderr, "Thread is not a joinable thread or another thread is already waiting to join with this thread.\n");
+		break;
+	case ESRCH: fprintf(stderr, "No thread with the ID thread could be found.\n");
+		break;
+	default : printf("Got join code %d.\n", errCode);
+		break;
+	}
+}
+
+/*!
  * \brief Thread listening for network status update
  * Thread listening for network status update with iNotify system.
  * Files updated are <interface name>Status located in /tmp.
@@ -356,29 +404,32 @@ static void printData(networkConf conf) {
  *
  * \return EXIT_SUCCESS or EXIT_ABORT if inotify system failed to initialize
  */
-int listenNetworkConnectivity(glbCtx_t ctx) {
+static void * listenNetworkConnectivity(void *userData) {
 	int idx;
 	int inotifyFd;
 	int wds[cnNbMonitoredInterfaces];
 	char *interfacePath;
-	size_t bufferLength = sizeof(struct inotify_event) + 12;// Biggest interfaces name + status won't be bigger than 11 bytes
+	glbCtx_t ctx = (glbCtx_t) userData;
+	size_t bufferLength = sizeof(struct inotify_event);// Biggest interfaces name + status won't be bigger than 11 bytes
 	ssize_t readNb;
 	char buffer[bufferLength];
+	struct inotify_event *event;
 
 	// Init
 	inotifyFd = inotify_init();
 	if(inotifyFd == -1) {
 		fprintf(stderr, "Failed to init inotify: %d::%s\n", errno, strerror(errno));
-		return EXIT_ABORT;
+		pthread_exit(NULL);
+		return NULL;
 	}
 	// Add watch
 	for(idx = 0 ; idx < cnNbMonitoredInterfaces ; idx++) {
-		interfacePath = calloc(1, strlen(ifnames[idx]) + 6);// + 6 <=> 'Status' string length
+		interfacePath = calloc(1, strlen(ifnames[idx]) + cnPathExtraLength);
 		if(interfacePath == NULL) {
 			perror("Can't allocate memory");
 			continue;
 		}
-		snprintf(interfacePath, strlen(ifnames[idx]) + 6, "%sStatus", ifnames[idx]);
+		snprintf(interfacePath, strlen(ifnames[idx]) + cnPathExtraLength, "/tmp/%sStatus", ifnames[idx]);
 		wds[idx] = inotify_add_watch(inotifyFd, interfacePath, IN_CLOSE_WRITE);
 		if(wds[idx] == -1) {
 			fprintf(stderr, "Failed to add inotify watch to %s: %d::%s\n", interfacePath, errno, strerror(errno));
@@ -386,15 +437,65 @@ int listenNetworkConnectivity(glbCtx_t ctx) {
 		free(interfacePath);
 	}
 	// Listen
-	while(TRUE) {
+	while(ctx->monitorInterface) {
 		readNb = read(inotifyFd, buffer, bufferLength);
 		if(readNb < 0) {
 			perror("Read");
 		}
+		event = (struct inotify_event*) buffer;
+		for(idx = 0 ; idx < cnNbMonitoredInterfaces ; idx++) {
+			if(event->wd == wds[idx]) {
+				printf("%s event received\n", ifnames[idx]);
+				updateConnectivityStatus(ctx, ifnames[idx]);
+				break;
+			}
+		}
+	}
+	// Monitoring ended -> remove listening
+	for(idx = 0 ; idx < cnNbMonitoredInterfaces ; idx++) {
+		if(inotify_rm_watch(inotifyFd, wds[idx]) == -1) {
+			perror("Remove watch failed: ");
+		}
 	}
 
-	// Before close, remove watch
-	return EXIT_SUCCESS;
+	pthread_exit(NULL);
+	return NULL;
+}
+
+static int updateConnectivityStatus(glbCtx_t ctx, char *interface) {
+	int fd;
+	int rc = EXIT_SUCCESS;
+	char *interfacePath = NULL;
+	const int bufferSz = 3;// '-' '1' '\0'
+	char *buffer = calloc(1, bufferSz);
+
+	interfacePath = calloc(1, strlen(interface) + cnPathExtraLength);
+	if(interfacePath == NULL) {
+		perror("Can't allocate memory");
+		return EXIT_FAILURE;
+	}
+	snprintf(interfacePath, strlen(interface) + cnPathExtraLength, "/tmp/%sStatus", interface);
+
+	fd = open(interfacePath, O_RDONLY);
+	if(fd == -1) {
+		fprintf(stderr, "Failed to open %s: %d::%s\n", interfacePath, errno, strerror(errno));
+		rc = EXIT_FAILURE;
+		goto CleanAll;
+	}
+	if(read(fd, buffer, bufferSz) == -1) {
+		fprintf(stderr, "Failed to read %s: %d::%s\n", interfacePath, errno, strerror(errno));
+		rc = EXIT_FAILURE;
+		goto CleanAll;
+	}
+	printf("Read %s\n", buffer);
+	pthread_mutex_lock(&ctx->monitorInterfaceMutex);
+	// Update context network status
+	pthread_mutex_unlock(&ctx->monitorInterfaceMutex);
+
+CleanAll:
+	if(buffer) free(buffer);
+	if(interfacePath) free(interfacePath);
+	return rc;
 }
 
 /*

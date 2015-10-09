@@ -29,6 +29,7 @@
 #define RPIBTSERIALCOMM_H_
 
 #include "wireless/iwlib.h"
+#include <stdbool.h>
 //typedef void * func_pointer(int);
 /* Global structure */
 typedef struct {
@@ -39,6 +40,10 @@ typedef struct {
 //	void * (*commMethods[NB_COMMANDS]) (void *params);/* Function pointer array */
 	/* WiFi */
 	wireless_scan_head *wHead;/* Scan array response */
+	/* Interface monitoring */
+	bool monitorInterface;
+	pthread_t monitorInterfaceThread;
+	pthread_mutex_t monitorInterfaceMutex;
 } glbCtx;
 typedef glbCtx * glbCtx_t;
 

@@ -109,6 +109,12 @@ static int testRpi(glbCtx_t ctx, int argc, char **argv) {
 		printf("Get Network\n");
 		testNetwork(ctx);
 	}
+	else if(strstr(argv[1], "TestMonitor") != NULL) {
+		printf("Test Monitor\n");
+		startInterfaceMonitoring(ctx);
+		sleep(10);
+		terminateMonitoring(ctx);
+	}
 	return EXIT_SUCCESS;
 }
 
