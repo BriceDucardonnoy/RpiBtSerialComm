@@ -47,6 +47,7 @@ static stCommFunc commFuncs[] = {// See constants.h => define lines to know the 
 	FUNC(scanWifi),// Discover WiFi, ID = 0
 	FUNC(stopPairing),// Stop bluetooth pairing, ID = 1
 	FUNC(readNetworkInfo),// Get network status
+	FUNC(readNetworkStatus),
 	{ NULL }
 };
 int running;
@@ -117,6 +118,7 @@ static int testRpi(glbCtx_t ctx, int argc, char **argv) {
 		for(i = 0 ; i < NB_INTERFACE_MONITORED ; i++) {
 			printf("%s\t--->%d\n", ifnames[i], ctx->interfaceStatus[i]);
 		}
+		testConnectivity(ctx);
 	}
 	return EXIT_SUCCESS;
 }
@@ -129,7 +131,11 @@ int callFunction(int funcCode, stArgs_t args) {
 }
 
 glbCtx_t initContext(void) {
+	int i;
 	glbCtx_t ctx = calloc(1, sizeof(glbCtx));
+	for(i = 0 ; i < NB_INTERFACE_MONITORED ; i++) {
+		ctx->interfaceStatus[i] = -1;
+	}
 //	ctx->wHead = malloc(sizeof(wireless_scan_head));
 
 	/* Init commands for communication protocol */
@@ -139,6 +145,7 @@ glbCtx_t initContext(void) {
 
 void destroyContext(glbCtx_t ctx) {
 	if(!ctx) return ;
+	terminateMonitoring(ctx);
 	if(ctx->wHead) {
 		cleanWirelessScanHeadContent(ctx->wHead);
 		free(ctx->wHead);
@@ -172,6 +179,7 @@ int main(int argc, char **argv) {
 		return testRpi(ctx, argc, argv);
 	}
 	// End of tests
+	startInterfaceMonitoring(ctx);
 
 	if(wait4connect(ctx, 20) != 0) {
 		fprintf(stderr, "Failed during wait4connect\n");

@@ -66,6 +66,7 @@
 
 //static void crcInit(void);
 static void printMessage(uint8_t *message, int len);
+static void testRequestWithoutArgument(glbCtx_t ctx, int cmdId, const char *startDebugMsg);
 static int getStuffedMessageLength(uint8_t *stuffedMessage, int rawSz);
 // Uses irreducible polynomial:  1 + x^2 + x^15 + x^16
 static uint16_t crcTable[256] = {
@@ -345,17 +346,17 @@ static int getStuffedMessageLength(uint8_t *stuffedMessage, int rawSz) {
 	return -1;
 }
 
-void testProtocol(glbCtx_t ctx) {
+static void testRequestWithoutArgument(glbCtx_t ctx, int cmdId, const char *startDebugMsg) {
 	printf("Enter in %s\n", __FUNCTION__);
 //	crcInit();
-	uint8_t pdu[3] = {PROTOCOL_VERSION, 1, DISCOVER_WIFI};
+	uint8_t pdu[3] = {PROTOCOL_VERSION, 1, cmdId};
 	uint16_t crc = calculateCrc16(pdu, 3);
 	printf("crc calculated for message is 0x%04X\n", crc);
-	uint8_t rawMessage[] = {0xFE, PROTOCOL_VERSION, 1, DISCOVER_WIFI, (uint8_t) (crc >> 8), (uint8_t) (crc & 0x00FF), 0xFF};
+	uint8_t rawMessage[] = {0xFE, PROTOCOL_VERSION, 1, cmdId, (uint8_t) (crc >> 8), (uint8_t) (crc & 0x00FF), 0xFF};
 	uint8_t *stuffedMessage;
 	uint8_t *cleanMessage;
 
-	printf("Raw discover WIFI");// rawMessage and clean/unstuffed Message should be the same
+	printf("RAW %s \n", startDebugMsg);// rawMessage and clean/unstuffed Message should be the same
 	printMessage(rawMessage, 7);// Displays the FF
 	printf("Stuffed ");// Message as it should be receive from client
 	stuffedMessage = byteStuffRawFrame(rawMessage, 7);
@@ -381,6 +382,11 @@ void testProtocol(glbCtx_t ctx) {
 	destroyContext(ctx);
 }
 
+void testProtocol(glbCtx_t ctx) {
+	printf("Enter in %s\n", __FUNCTION__);
+	testRequestWithoutArgument(ctx, DISCOVER_WIFI, "discover WiFi");
+}
+
 void testNetwork(glbCtx_t ctx) {
 	printf("Enter in %s\n", __FUNCTION__);
 	/* Test get network from ETH0 */
@@ -392,7 +398,7 @@ void testNetwork(glbCtx_t ctx) {
 		uint8_t *stuffedMessage;
 		uint8_t *cleanMessage;
 
-		printf("Raw get network");// rawMessage and clean/unstuffed Message should be the same
+		printf("Raw get network\n");// rawMessage and clean/unstuffed Message should be the same
 		printMessage(rawMessage, 8);// Displays the FF
 		printf("Stuffed ");// Message as it should be receive from client
 		stuffedMessage = byteStuffRawFrame(rawMessage, 8);
@@ -422,7 +428,7 @@ void testNetwork(glbCtx_t ctx) {
 		uint8_t *stuffedMessage;
 		uint8_t *cleanMessage;
 
-		printf("Raw get network");// rawMessage and clean/unstuffed Message should be the same
+		printf("Raw get network\n");// rawMessage and clean/unstuffed Message should be the same
 		printMessage(rawMessage, 8);// Displays the FF
 		printf("Stuffed ");// Message as it should be receive from client
 		stuffedMessage = byteStuffRawFrame(rawMessage, 8);
@@ -443,6 +449,11 @@ void testNetwork(glbCtx_t ctx) {
 
 	printf("---------------------------------------------\nClean context\n");
 	destroyContext(ctx);
+}
+
+void testConnectivity(glbCtx_t ctx) {
+	printf("Enter in %s\n", __FUNCTION__);
+	testRequestWithoutArgument(ctx, CONN_STATUS, "test connectivity");
 }
 
 //int main(int argc, char **argv) {

@@ -41,7 +41,31 @@ typedef struct networkConf {
 
 extern char *ifnames[];
 
+/*
+ * \brief Update network information into output part of args
+ * Update network information into output part of args. AKA:
+ * - IP address
+ * - Netmask
+ * - Gateway
+ * - Config mode (Static - DHCP)
+ * - DNS (primary and secondary)
+ *
+ * \return EXIT_SUCCESS or EXIT_FAILURE
+ */
 extern int readNetworkInfo(stArgs_t args);
+/*!
+ * \brief Put in the output args the status of ETH0 and WLAN0 connectivity
+ *
+ * Put in the output args the status of ETH0 and WLAN0 connectivity.
+ * This is get from the checkInterfaceStatus.sh bash script
+ * Connectivity status per interface is:
+ * -1	no network or update about the status available (script was launched with wrong arguments)
+ * 0	www.google.com is reachable
+ * 1	8.8.8.8 is reachable. Probably DNS server not configured or not reachable
+ * 2	gateway or DNS reachable. Is the unit on a private network?
+ *
+ * \return EXIT_SUCCESS or EXIT_FAILURE
+ */
 extern int readNetworkStatus(stArgs_t args);
 /*!
  * \brief Start a thread listening network connectivity status

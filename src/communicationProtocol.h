@@ -64,6 +64,7 @@ extern int serializeAndAnswer(stArgs_t args);
 extern uint16_t calculateCrc16(uint8_t *message, int nBytes);
 extern void testProtocol(glbCtx_t ctx);
 extern void testNetwork(glbCtx_t ctx);
+extern void testConnectivity(glbCtx_t ctx);
 extern void testPing(char *ip);
 
 #endif /* COMMUNICATIONPROTOCOL_H_ */

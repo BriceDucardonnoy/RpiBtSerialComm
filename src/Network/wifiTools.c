@@ -109,7 +109,6 @@ int scanWifi(stArgs_t args) {
 			result->b.key_flags,// Encryption
 			(args->output[i * outputSz + sizeof(result->b.essid) + sizeof(result->stats.qual.level) +
 				sizeof(result->stats.qual.qual) + sizeof(result->stats.qual.qual)] == 1) ? "yes\0" : "no\0");
-		// TODO BDY: make some define for the offset
 //		(result->b.key_flags & IW_ENCODE_DISABLED) == 0 ? "on" : "off");
 
 		args->outputLength += outputSz;

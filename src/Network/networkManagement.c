@@ -64,7 +64,6 @@ static int updateConnectivityStatus(glbCtx_t ctx, char *interface);
 
 static const int cnPathExtraLength = 12;// + 12 <=> '/tmp/' + 'Status' + '\0' string length
 char *ifnames[] = {"wlan0", "eth0"};
-// TODO BDY: write doc when updateStatus done
 
 /*!
  * \brief Put in the output args the status of ETH0 and WLAN0 connectivity
@@ -77,16 +76,37 @@ char *ifnames[] = {"wlan0", "eth0"};
  * 1	8.8.8.8 is reachable. Probably DNS server not configured or not reachable
  * 2	gateway or DNS reachable. Is the unit on a private network?
  *
- * \return EXIT_SUCCESS or EXIT_FAILURE
+ * \return EXIT_SUCCESS
  */
 int readNetworkStatus(stArgs_t args) {
-	// Map in SHM?
-	// TODO BDY: NYI readNetworkStatus
+	printf("Enter in %s\n", __FUNCTION__);
+	int idx;
+
+	args->outputLength = NB_INTERFACE_MONITORED * sizeof(uint8_t);
+	args->output = malloc(args->outputLength);
+	pthread_mutex_lock(&args->ctx->monitorInterfaceMutex);
+	for(idx = 0 ; idx < NB_INTERFACE_MONITORED ; idx++) {
+		args->output[idx] = (int8_t) (args->ctx->interfaceStatus[idx] & 0xFF);
+		printf("Network[%d] = %d\n", idx, args->output[idx]);
+	}
+	pthread_mutex_unlock(&args->ctx->monitorInterfaceMutex);
+
 	return EXIT_SUCCESS;
 }
 
-int readNetworkInfo(stArgs_t args)
-{
+/*
+ * \brief Update network information into output part of args
+ * Update network information into output part of args. AKA:
+ * - IP address
+ * - Netmask
+ * - Gateway
+ * - Config mode (Static - DHCP)
+ * - DNS (primary and secondary)
+ *
+ * \return EXIT_SUCCESS or EXIT_FAILURE
+ */
+int readNetworkInfo(stArgs_t args) {
+	printf("Enter in %s\n", __FUNCTION__);
 	int fd;
 	int ret = EXIT_SUCCESS;
 	struct ifreq ifr;
@@ -100,7 +120,7 @@ int readNetworkInfo(stArgs_t args)
 		conf->isWifi = args->input[4];
 		break;
 	default:
-		fprintf(stderr, "Unvalid protocol\n");
+		fprintf(stderr, "Invalid protocol\n");
 		return EXIT_FAILURE;
 	};
 
@@ -117,7 +137,7 @@ int readNetworkInfo(stArgs_t args)
 	// Address
 	int rc = ioctl(fd, SIOCGIFADDR, &ifr);
 	if(rc < 0) {
-		fprintf(stderr, "Failed to get IP address for %s: %d::%s. Try with %s.\n", ifname, errno, strerror(errno), ifnames[1]);
+		fprintf(stderr, "Failed to get IP address for %s: %d::%s.\n", ifname, errno, strerror(errno));
 		ret = EXIT_FAILURE;
 		goto CleanAll;
 	}
@@ -255,7 +275,7 @@ static int readDns(networkConf_t conf) {
 	char dns[128];
 	char *p;
 	int dnsIdx 				= 0;
-	int ifaceSz 			= conf->isWifi ? strlen("iface wlanX inet") : strlen("iface ethX inet");
+	int ifaceSz 			= (conf->isWifi ? strlen("iface wlanX inet") : strlen("iface ethX inet")) + 1;
 	char *ethToFind 		= calloc(1, ifaceSz + 1);
 	bool bEthFound 			= FALSE;// Set to true if /etc/resolv.conf is used
 	const char *dnsKeyWord	= "dns-nameservers\0";
@@ -383,11 +403,12 @@ void startInterfaceMonitoring(glbCtx_t ctx) {
  * Stop the thread listening network connectivity status
  */
 void terminateMonitoring(glbCtx_t ctx) {
-	pthread_mutex_lock(&ctx->monitorInterfaceMutex);
-	ctx->monitorInterface = FALSE;
-	pthread_mutex_unlock(&ctx->monitorInterfaceMutex);
-	printThreadJoinErrorText(pthread_join(ctx->monitorInterfaceThread, NULL));
-	pthread_mutex_destroy(&ctx->monitorInterfaceMutex);
+	if(pthread_mutex_lock(&ctx->monitorInterfaceMutex) == 0) {
+		ctx->monitorInterface = FALSE;
+		pthread_mutex_unlock(&ctx->monitorInterfaceMutex);
+		printThreadJoinErrorText(pthread_join(ctx->monitorInterfaceThread, NULL));
+		pthread_mutex_destroy(&ctx->monitorInterfaceMutex);
+	}
 }
 
 static void printThreadJoinErrorText(int errCode) {

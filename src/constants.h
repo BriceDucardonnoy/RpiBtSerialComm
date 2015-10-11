@@ -43,11 +43,12 @@
 #define RX_BUFFER_SIZE	1024
 
 /* CODE FUNCTION */
-#define NB_COMMANDS		3
+#define NB_COMMANDS		4
 
 #define DISCOVER_WIFI	0
 #define DISCONNECT		1
 #define GET_NETWORK		2
+#define CONN_STATUS		3
 
 /* Network specific */
 #define NETWORK_LAN		0x00
