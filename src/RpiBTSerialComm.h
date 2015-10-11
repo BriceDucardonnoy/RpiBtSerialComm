@@ -28,8 +28,10 @@
 #ifndef RPIBTSERIALCOMM_H_
 #define RPIBTSERIALCOMM_H_
 
-#include "wireless/iwlib.h"
 #include <stdbool.h>
+
+#include "constants.h"
+#include "wireless/iwlib.h"
 //typedef void * func_pointer(int);
 /* Global structure */
 typedef struct {
@@ -44,6 +46,7 @@ typedef struct {
 	bool monitorInterface;
 	pthread_t monitorInterfaceThread;
 	pthread_mutex_t monitorInterfaceMutex;
+	int interfaceStatus[NB_INTERFACE_MONITORED];
 } glbCtx;
 typedef glbCtx * glbCtx_t;
 

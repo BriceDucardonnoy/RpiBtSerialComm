@@ -39,6 +39,8 @@ typedef struct networkConf {
 	char essid[IW_ESSID_MAX_SIZE];
 } networkConf, *networkConf_t;
 
+extern char *ifnames[];
+
 extern int readNetworkInfo(stArgs_t args);
 extern int readNetworkStatus(stArgs_t args);
 /*!

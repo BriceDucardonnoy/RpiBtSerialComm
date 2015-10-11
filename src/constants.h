@@ -56,6 +56,8 @@
 /* WiFi */
 #define IW_SCAN_HACK			0x8000
 
+#define NB_INTERFACE_MONITORED	2
+
 //#include "Network/wifiTools.h"
 #include "stdint.h"
 #include "wireless/iwlib.h"

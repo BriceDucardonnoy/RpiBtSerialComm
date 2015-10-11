@@ -50,11 +50,20 @@ static int readDns(networkConf_t conf);
 
 static void * listenNetworkConnectivity(void *userData);
 static void printThreadJoinErrorText(int errCode);
+/*
+ * \brief Open the file related to <interface> and return its content
+ * Open the file related to <interface>: /tmp/<interface>Status and read its content
+ *
+ * \return EXIT_ABORT if failed (-1) or the content of file:
+ * -1	no network or update about the status available (script was launched with wrong arguments)
+ * 0	www.google.com is reachable
+ * 1	8.8.8.8 is reachable. Probably DNS server not configured or not reachable
+ * 2	gateway or DNS reachable. Is the unit on a private network?
+ */
 static int updateConnectivityStatus(glbCtx_t ctx, char *interface);
 
-static int cnNbMonitoredInterfaces = 2;
 static const int cnPathExtraLength = 12;// + 12 <=> '/tmp/' + 'Status' + '\0' string length
-static char *ifnames[] = {"wlan0", "eth0"};
+char *ifnames[] = {"wlan0", "eth0"};
 // TODO BDY: write doc when updateStatus done
 
 /*!
@@ -407,7 +416,8 @@ static void printThreadJoinErrorText(int errCode) {
 static void * listenNetworkConnectivity(void *userData) {
 	int idx;
 	int inotifyFd;
-	int wds[cnNbMonitoredInterfaces];
+	int wds[NB_INTERFACE_MONITORED];
+	int value;
 	char *interfacePath;
 	glbCtx_t ctx = (glbCtx_t) userData;
 	size_t bufferLength = sizeof(struct inotify_event);// Biggest interfaces name + status won't be bigger than 11 bytes
@@ -423,7 +433,7 @@ static void * listenNetworkConnectivity(void *userData) {
 		return NULL;
 	}
 	// Add watch
-	for(idx = 0 ; idx < cnNbMonitoredInterfaces ; idx++) {
+	for(idx = 0 ; idx < NB_INTERFACE_MONITORED ; idx++) {
 		interfacePath = calloc(1, strlen(ifnames[idx]) + cnPathExtraLength);
 		if(interfacePath == NULL) {
 			perror("Can't allocate memory");
@@ -443,16 +453,20 @@ static void * listenNetworkConnectivity(void *userData) {
 			perror("Read");
 		}
 		event = (struct inotify_event*) buffer;
-		for(idx = 0 ; idx < cnNbMonitoredInterfaces ; idx++) {
+		for(idx = 0 ; idx < NB_INTERFACE_MONITORED ; idx++) {
 			if(event->wd == wds[idx]) {
 				printf("%s event received\n", ifnames[idx]);
-				updateConnectivityStatus(ctx, ifnames[idx]);
+				value = updateConnectivityStatus(ctx, ifnames[idx]);
+				// Update context network status
+				pthread_mutex_lock(&ctx->monitorInterfaceMutex);
+				ctx->interfaceStatus[idx] = value;
+				pthread_mutex_unlock(&ctx->monitorInterfaceMutex);
 				break;
 			}
 		}
 	}
 	// Monitoring ended -> remove listening
-	for(idx = 0 ; idx < cnNbMonitoredInterfaces ; idx++) {
+	for(idx = 0 ; idx < NB_INTERFACE_MONITORED ; idx++) {
 		if(inotify_rm_watch(inotifyFd, wds[idx]) == -1) {
 			perror("Remove watch failed: ");
 		}
@@ -462,6 +476,16 @@ static void * listenNetworkConnectivity(void *userData) {
 	return NULL;
 }
 
+/*
+ * \brief Open the file related to <interface> and return its content
+ * Open the file related to <interface>: /tmp/<interface>Status and read its content
+ *
+ * \return EXIT_ABORT if failed (-1) or the content of file:
+ * -1	no network or update about the status available (script was launched with wrong arguments)
+ * 0	www.google.com is reachable
+ * 1	8.8.8.8 is reachable. Probably DNS server not configured or not reachable
+ * 2	gateway or DNS reachable. Is the unit on a private network?
+ */
 static int updateConnectivityStatus(glbCtx_t ctx, char *interface) {
 	int fd;
 	int rc = EXIT_SUCCESS;
@@ -472,26 +496,29 @@ static int updateConnectivityStatus(glbCtx_t ctx, char *interface) {
 	interfacePath = calloc(1, strlen(interface) + cnPathExtraLength);
 	if(interfacePath == NULL) {
 		perror("Can't allocate memory");
-		return EXIT_FAILURE;
+		return EXIT_ABORT;
 	}
 	snprintf(interfacePath, strlen(interface) + cnPathExtraLength, "/tmp/%sStatus", interface);
 
 	fd = open(interfacePath, O_RDONLY);
 	if(fd == -1) {
 		fprintf(stderr, "Failed to open %s: %d::%s\n", interfacePath, errno, strerror(errno));
-		rc = EXIT_FAILURE;
+		rc = EXIT_ABORT;
 		goto CleanAll;
 	}
 	if(read(fd, buffer, bufferSz) == -1) {
 		fprintf(stderr, "Failed to read %s: %d::%s\n", interfacePath, errno, strerror(errno));
-		rc = EXIT_FAILURE;
+		rc = EXIT_ABORT;
 		goto CleanAll;
 	}
-	printf("Read %s\n", buffer);
-	pthread_mutex_lock(&ctx->monitorInterfaceMutex);
-	// Update context network status
-	pthread_mutex_unlock(&ctx->monitorInterfaceMutex);
+	printf("Read %s\t", buffer);
+	if(close(fd) == -1) {
+		fprintf(stderr, "Failed to close %s: %d::%s\n", interfacePath, errno, strerror(errno));
+	}
 
+	// Convert from char * to integer
+	rc = atoi(buffer);
+	printf("Converted int value is %d\n", rc);
 CleanAll:
 	if(buffer) free(buffer);
 	if(interfacePath) free(interfacePath);

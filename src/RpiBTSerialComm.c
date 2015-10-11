@@ -30,7 +30,6 @@
 #include <string.h>
 #include <signal.h>
 
-#include "constants.h"
 #include "RpiBTSerialComm.h"
 #include "bluetoothUtils.h"
 #include "communicationProtocol.h"
@@ -67,7 +66,6 @@ void sigterm_handler(int sig) {
 
 void sigsegv_handler(int sig) {
 	fprintf(stderr, "sigsegv caught !\n");
-	// FIXME BDY: __dump_call_stack
 //	__dump_call_stack();
 	exit(EXIT_FAILURE);
 }
@@ -114,6 +112,11 @@ static int testRpi(glbCtx_t ctx, int argc, char **argv) {
 		startInterfaceMonitoring(ctx);
 		sleep(10);
 		terminateMonitoring(ctx);
+		printf("Final network status are:\n");
+		int i;
+		for(i = 0 ; i < NB_INTERFACE_MONITORED ; i++) {
+			printf("%s\t--->%d\n", ifnames[i], ctx->interfaceStatus[i]);
+		}
 	}
 	return EXIT_SUCCESS;
 }
@@ -189,5 +192,11 @@ int main(int argc, char **argv) {
 	destroyContext(ctx);
 	return EXIT_SUCCESS;
 }
-// TODO BDY: monitor signals for scan pairing & test with Valgrind
+/*
+ * TODO BDY list:
+ * deploy as .deb
+ * monitor signals for scan pairing
+ * test with Valgrind
+ * use RPi tools as submodules for selfcontain autogen
+ */
 
