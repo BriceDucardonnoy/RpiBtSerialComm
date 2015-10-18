@@ -49,6 +49,7 @@ static int readStaticDhcp(networkConf_t conf, char *ifname);
 static int readDns(networkConf_t conf);
 
 static void * listenNetworkConnectivity(void *userData);
+static void populateEmpty(networkConf_t conf);
 static void printThreadJoinErrorText(int errCode);
 /*
  * \brief Open the file related to <interface> and return its content
@@ -107,12 +108,11 @@ int readNetworkStatus(stArgs_t args) {
  */
 int readNetworkInfo(stArgs_t args) {
 	printf("Enter in %s\n", __FUNCTION__);
-	int fd;
+	int fd = -1;
 	int ret = EXIT_SUCCESS;
 	struct ifreq ifr;
 	networkConf_t conf = NULL;
 	char *ifname;
-	printf("Enter in %s\n", __FUNCTION__);
 	conf = calloc(1, sizeof(networkConf));
 	// Extract the configuration asked: NETWORK_LAN or NETWORK_WIFI
 	switch(PROTOCOL_VERSION) {
@@ -129,7 +129,9 @@ int readNetworkInfo(stArgs_t args) {
 	fd = socket(AF_INET, SOCK_DGRAM, 0);
 	if (fd < 0) {
 		fprintf(stderr, "Cannot get control socket: %d::%s\n", errno, strerror(errno));
-		return EXIT_FAILURE;
+		ret = EXIT_FAILURE;
+		populateEmpty(conf);
+		goto PopulateOutput;
 	}
 	ifr.ifr_addr.sa_family = AF_INET;
 	strncpy(ifr.ifr_name, ifname, IFNAMSIZ-1);
@@ -139,7 +141,8 @@ int readNetworkInfo(stArgs_t args) {
 	if(rc < 0) {
 		fprintf(stderr, "Failed to get IP address for %s: %d::%s.\n", ifname, errno, strerror(errno));
 		ret = EXIT_FAILURE;
-		goto CleanAll;
+		populateEmpty(conf);
+		goto PopulateOutput;
 	}
 	strncpy(conf->address, inet_ntoa(((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr), IFNAMSIZ - 1);
 
@@ -165,8 +168,9 @@ int readNetworkInfo(stArgs_t args) {
     	readWifi(conf, ifname);
     }
 
-	printData(*conf);
 
+PopulateOutput:
+	printData(*conf);
 	// Copy result into output
 	if((args->output = malloc(sizeof(networkConf))) == NULL) {
 		fprintf(stderr, "Failed to allocate memory in %s: %d::%s\n", __FUNCTION__, errno, strerror(errno));
@@ -178,13 +182,23 @@ int readNetworkInfo(stArgs_t args) {
 
 CleanAll:
 	printf("%s: Clean all\n", __FUNCTION__);
-	close(fd);
+	if(fd != -1) close(fd);
 //	if(conf->address) free(conf->address);
 //	if(conf->netmask) free(conf->netmask);
 //	if(conf->gateway) free(conf->gateway);
 	if(conf) free(conf);
 
     return ret;
+}
+
+static void populateEmpty(networkConf_t conf) {
+	printf("Enter in %s\n", __FUNCTION__);
+	strcpy(conf->address, "0.0.0.0");
+	strcpy(conf->netmask, "255.255.255.255");
+	conf->isDhcp = FALSE;
+	if(conf->isWifi) {
+		strcpy(conf->essid, "NOT CONFIGURED");
+	}
 }
 
 static int readWifi(networkConf_t conf, char *ifname) {
